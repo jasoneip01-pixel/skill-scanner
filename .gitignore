@@ -1,8 +1,22 @@
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
 *.egg-info/
 dist/
 build/
-.venv/
-*.egg
+
+# Test artifacts
+.pytest_cache/
 .agent-skills/
+
+# Coverage
+htmlcov/
+.coverage
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
