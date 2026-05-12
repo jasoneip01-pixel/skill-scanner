@@ -13,6 +13,11 @@ from rich import box
 
 from skill_scanner.engine import scan_skill
 from skill_scanner.policies import load_policy, list_policies
+from skill_scanner.policy_engine import PolicyEngine
+from skill_scanner.trace_engine import TraceRecorder, TraceComparator
+from skill_scanner.registry import RegistryScanner
+from skill_scanner.agent_surface import AgentSurfaceScanner
+from skill_scanner.enterprise import ComplianceReporter, NotificationSender
 
 console = Console(highlight=False)
 
@@ -124,12 +129,12 @@ def _print_terminal(result: dict, skill_dir: str):
     if result["blocked"]:
         console.print(Panel(
             Text("✖ MERGE BLOCKED", style="bold red"),
-            title="Skill Scanner", subtitle=f"v0.2.0"
+            title="Skill Scanner", subtitle=f"v0.3.0"
         ))
     else:
         console.print(Panel(
             Text("✓ PASSED", style="bold green"),
-            title="Skill Scanner", subtitle=f"v0.2.0"
+            title="Skill Scanner", subtitle=f"v0.3.0"
         ))
 
     # Summary stats
@@ -208,7 +213,7 @@ def _to_sarif(result: dict) -> dict:
             "tool": {
                 "driver": {
                     "name": "Skill Scanner",
-                    "version": "0.2.0",
+                    "version": "0.3.0",
                     "rules": rules,
                 }
             },
@@ -231,3 +236,248 @@ def _save_report(result: dict, output: str):
         console.file = old_console
 
     Path(output).write_text(buf.getvalue())
+
+
+# ── Phase 2: Trace commands ──
+
+@main.group()
+def trace():
+    """Record and compare Agent tool call traces."""
+    pass
+
+
+@trace.command()
+@click.argument("skill_name")
+@click.argument("version")
+@click.option("--input", "-i", "trace_file", type=click.Path(exists=True),
+              help="JSON trace file to record as baseline")
+def record(skill_name, version, trace_file):
+    """Record a tool trace as baseline for a skill version."""
+    try:
+        calls = json.loads(Path(trace_file).read_text())
+        if not isinstance(calls, list):
+            calls = calls.get("calls", [])
+    except Exception as e:
+        console.print(f"[red]Error reading trace file:[/red] {e}")
+        sys.exit(1)
+
+    recorder = TraceRecorder()
+    tid = recorder.record(skill_name, version, calls)
+    console.print(f"[green]✓[/green] Trace recorded: [cyan]{tid}[/cyan]")
+    console.print(f"   {len(calls)} tool calls recorded")
+
+
+@trace.command()
+@click.argument("current_trace", type=click.Path(exists=True))
+@click.option("--baseline-trace", "-b", required=True,
+              help="Baseline trace ID or file to compare against")
+def diff(current_trace, baseline_trace):
+    """Compare two traces to detect capability drift."""
+    recorder = TraceRecorder()
+
+    # Load baseline
+    baseline = recorder.load(baseline_trace)
+    if not baseline:
+        try:
+            baseline = json.loads(Path(baseline_trace).read_text())
+        except Exception:
+            console.print(f"[red]Baseline trace not found:[/red] {baseline_trace}")
+            sys.exit(1)
+
+    # Load current
+    try:
+        current = json.loads(Path(current_trace).read_text())
+    except Exception as e:
+        console.print(f"[red]Error reading current trace:[/red] {e}")
+        sys.exit(1)
+
+    result = TraceComparator.compare(baseline, current)
+
+    if result["blocked"]:
+        console.print(Panel(Text("✖ CAPABILITY DRIFT DETECTED", style="bold red"), title="Trace Diff"))
+    else:
+        console.print(Panel(Text("✓ No significant drift", style="bold green"), title="Trace Diff"))
+
+    console.print(f"[dim]{result['summary']}[/dim]")
+
+    if result["diffs"]:
+        console.print()
+        for d in result["diffs"]:
+            sev_color = "red" if d["severity"] == "critical" else "yellow"
+            console.print(f"  [{sev_color}]{d['severity']:8s}[/{sev_color}] {d['detail']}")
+
+
+# ── Phase 3: Registry commands ──
+
+@main.group()
+def registry():
+    """Scan and monitor public Skill registries."""
+    pass
+
+
+@registry.command()
+@click.option("--query", "-q", default="SKILL.md", help="Search query")
+@click.option("--max", "-n", default=10, help="Max results")
+def discover(query, max):
+    """Discover skills from GitHub code search."""
+    scanner = RegistryScanner()
+    results = scanner.discover_from_github(query, max)
+
+    if not results:
+        console.print("[yellow]No skills discovered. Set GITHUB_TOKEN env var for GitHub search.[/yellow]")
+        return
+
+    console.print(f"[green]Found {len(results)} skills:[/green]\n")
+    for r in results:
+        console.print(f"  • [cyan]{r['repo']}[/cyan] — {r['path']}")
+
+
+@registry.command()
+@click.argument("url")
+def scan_url(url):
+    """Fetch and scan a skill from a raw URL."""
+    scanner = RegistryScanner()
+    result = scanner.scan_registry_skill(url)
+
+    if result is None:
+        console.print(f"[red]Failed to fetch or scan:[/red] {url}")
+        sys.exit(1)
+
+    _print_terminal(result, url)
+
+
+@registry.command()
+def stats():
+    """Show registry statistics."""
+    scanner = RegistryScanner()
+    stats = scanner.sync_stats()
+
+    table = Table(title="Registry Stats", box=box.SIMPLE)
+    table.add_column("Metric", style="dim")
+    table.add_column("Value")
+    table.add_row("Skills indexed", str(stats["total_skills"]))
+    table.add_row("Malicious reports", str(stats["malicious_reports"]))
+    table.add_row("Last sync", str(stats.get("last_sync", "never")))
+    console.print(table)
+
+
+# ── Phase 4: Agent surface & enterprise commands ──
+
+@main.command()
+@click.argument("agent_dir", type=click.Path(exists=True))
+@click.option("--policy", "-p", default="moderate", help="Policy level")
+@click.option("--format", "-f", "output_format",
+              type=click.Choice(["terminal", "json"]), default="terminal")
+def audit(agent_dir, policy, output_format):
+    """Full agent surface audit — scan all 7 dimensions.
+
+    AGENT_DIR: Path to the agent project directory.
+    """
+    try:
+        scanner = AgentSurfaceScanner(agent_dir)
+        result = scanner.scan_all(policy)
+    except FileNotFoundError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        sys.exit(1)
+
+    if output_format == "json":
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        sys.exit(1 if result["verdict"] == "blocked" else 0)
+
+    # Terminal output
+    blocked = result["verdict"] == "blocked"
+    if blocked:
+        console.print(Panel(Text("✖ AGENT RELEASE BLOCKED", style="bold red"), title="Agent Surface Audit"))
+    else:
+        console.print(Panel(Text("✓ AGENT RELEASE APPROVED", style="bold green"), title="Agent Surface Audit"))
+
+    console.print(f"[dim]Scanned {len(result['dimensions'])} dimensions | {result['total_critical']} critical · {result['total_warnings']} warnings[/dim]")
+
+    if result["blocked_dimensions"]:
+        console.print(f"\n[red bold]Blocked dimensions:[/red bold] {', '.join(result['blocked_dimensions'])}")
+
+    # Dimension summary
+    console.print()
+    dtable = Table(box=box.SIMPLE)
+    dtable.add_column("Dimension", style="cyan")
+    dtable.add_column("Status")
+    dtable.add_column("Critical")
+    dtable.add_column("Warnings")
+    dtable.add_column("Details")
+
+    for dim, dresult in result["dimensions"].items():
+        status = dresult.get("status", "unknown")
+        status_color = "green" if status == "passed" else "red"
+        dtable.add_row(
+            dim,
+            f"[{status_color}]{status}[/{status_color}]",
+            str(dresult.get("critical", 0)),
+            str(dresult.get("warnings", 0)),
+            dresult.get("message", dresult.get("note", "—")),
+        )
+
+    console.print(dtable)
+    sys.exit(1 if blocked else 0)
+
+
+@main.command()
+@click.argument("agent_dir", type=click.Path(exists=True))
+@click.option("--framework", "-f", default="soc2",
+              type=click.Choice(ComplianceReporter.FRAMEWORKS))
+@click.option("--output", "-o", type=click.Path(), help="Output file")
+def compliance(agent_dir, framework, output):
+    """Generate compliance audit report (SOC2, GDPR, PCI-DSS).
+
+    AGENT_DIR: Path to the agent project directory.
+    """
+    try:
+        scanner = AgentSurfaceScanner(agent_dir)
+        scan_results = scanner.scan_all()
+    except FileNotFoundError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        sys.exit(1)
+
+    report = ComplianceReporter.generate(scan_results, framework)
+
+    if output:
+        Path(output).write_text(json.dumps(report, indent=2))
+        console.print(f"[green]✓[/green] Compliance report saved: {output}")
+    else:
+        print(json.dumps(report, indent=2))
+
+    console.print(f"\n[bold]Compliance Score:[/bold] {report['compliance_score']}%")
+    if report["remediation_required"]:
+        console.print(f"[red]{len(report['remediation_required'])} controls need remediation[/red]")
+
+
+@main.command()
+@click.argument("skill_dir", type=click.Path(exists=True))
+@click.option("--slack", help="Slack webhook URL")
+@click.option("--teams", help="Teams webhook URL")
+def notify(skill_dir, slack, teams):
+    """Send scan results to Slack/Teams."""
+    try:
+        result = scan_skill(skill_dir)
+    except FileNotFoundError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        sys.exit(1)
+
+    notifier = NotificationSender()
+    sent = False
+
+    if slack:
+        if notifier.send_slack(slack, result):
+            console.print("[green]✓[/green] Slack notification sent")
+            sent = True
+        else:
+            console.print("[red]✗[/red] Slack notification failed")
+
+    if teams:
+        if notifier.send_teams(teams, result):
+            console.print("[green]✓[/green] Teams notification sent")
+            sent = True
+        else:
+            console.print("[red]✗[/red] Teams notification failed")
+
+    if not sent:
+        console.print("[yellow]No webhook URLs provided. Set --slack or --teams.[/yellow]")

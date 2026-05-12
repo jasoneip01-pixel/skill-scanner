@@ -1,0 +1,36 @@
+"""Helm values for Skill Scanner deployment."""
+
+replicaCount: 1
+
+image:
+  repository: jasoneip01-pixel/skill-scanner
+  tag: "0.3.0"
+  pullPolicy: IfNotPresent
+
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+config:
+  policy: moderate
+  failOn: critical
+  notifications:
+    slack: ""
+    teams: ""
+
+# Persistent volume for scan reports and registry DB
+persistence:
+  enabled: true
+  size: 10Gi
+
+serviceAccount:
+  create: true
+  name: skill-scanner
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000

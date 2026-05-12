@@ -1,0 +1,15 @@
+{
+  "trace_id": "test-skill-1.0.0-20260512185500",
+  "skill_name": "test-skill",
+  "version": "1.0.0",
+  "recorded_at": "2026-05-12T18:55:00.184096+00:00",
+  "calls": [
+    {
+      "tool": "check_balance",
+      "method": "GET",
+      "params": {
+        "account": "123"
+      }
+    }
+  ]
+}

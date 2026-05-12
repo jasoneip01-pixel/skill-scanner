@@ -1,0 +1,18 @@
+apiVersion: v2
+name: skill-scanner
+description: Agent Skill Surface Diff — Helm chart for Skill Scanner
+type: application
+version: 0.3.0
+appVersion: "0.3.0"
+keywords:
+  - security
+  - agent
+  - skill
+  - scanner
+  - supply-chain
+home: https://github.com/jasoneip01-pixel/skill-scanner
+sources:
+  - https://github.com/jasoneip01-pixel/skill-scanner
+maintainers:
+  - name: Sky
+    email: skyflyld@users.noreply.github.com
