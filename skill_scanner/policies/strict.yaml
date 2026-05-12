@@ -1,0 +1,29 @@
+# Strict Security Policy — maximum security, zero tolerance
+policy:
+  name: security.strict
+  description: Maximum security policy for production and high-compliance environments
+  level: strict
+
+  block_on:
+    - prompt_injection.critical
+    - data_exfiltration.high
+    - new_payment_tool.requires_guard
+    - credential_exposure
+    - manifest.invalid_yaml
+    - resource.executable
+    - network_access_without_justification
+    - resource.executable_bit
+
+  warn_on:
+    - business_claim_changed
+    - tool_permission_mismatch
+    - secrets_file_access
+    - dangerous_script
+    - suspicious_network_access
+    - manifest.missing_field
+    - manifest.version_format
+
+  thresholds:
+    max_critical: 0
+    max_warnings: 0
+    risk_score_max: 20

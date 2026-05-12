@@ -1,0 +1,24 @@
+# Permissive Security Policy — minimal friction for development
+policy:
+  name: security.permissive
+  description: Light security for rapid development and prototyping
+  level: permissive
+
+  block_on:
+    - prompt_injection.critical
+    - data_exfiltration.high
+
+  warn_on:
+    - credential_exposure
+    - new_payment_tool.requires_guard
+    - network_access_without_justification
+    - business_claim_changed
+    - tool_permission_mismatch
+    - secrets_file_access
+    - dangerous_script
+    - resource.executable
+
+  thresholds:
+    max_critical: 0
+    max_warnings: 10
+    risk_score_max: 80

@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skill-scanner"
+version = "0.2.0"
+description = "Agent Skill Surface Diff — scan Agent Skills for security risks before production"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Sky", email = "skyflyld@users.noreply.github.com"}]
+keywords = ["agent", "skill", "security", "scanner", "supply-chain", "mcp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0",
+    "click>=8.1",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov", "ruff"]
+
+[project.scripts]
+agent-skills = "skill_scanner.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/jasoneip01-pixel/skill-scanner"
+Documentation = "https://jasoneip01-pixel.github.io/skill-scanner/"
+
+[tool.setuptools.packages.find]
+include = ["skill_scanner*"]

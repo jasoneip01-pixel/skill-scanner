@@ -1,0 +1,67 @@
+name: 'Agent Skill Scanner'
+description: 'Scan Agent Skills for security risks before production'
+author: 'Sky'
+branding:
+  icon: 'shield'
+  color: 'red'
+
+inputs:
+  path:
+    description: 'Path to the skill directory'
+    required: true
+    default: '.'
+  policy:
+    description: 'Security policy level (moderate, strict, permissive)'
+    required: false
+    default: 'moderate'
+  fail-on:
+    description: 'Fail on severity (critical, warning, never)'
+    required: false
+    default: 'critical'
+  format:
+    description: 'Output format (sarif, json, terminal)'
+    required: false
+    default: 'sarif'
+
+outputs:
+  result:
+    description: 'Scan result (passed, blocked)'
+  critical:
+    description: 'Number of critical findings'
+  warnings:
+    description: 'Number of warnings'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Skill Scanner
+      shell: bash
+      run: pip install skill-scanner
+
+    - name: Run scan
+      id: scan
+      shell: bash
+      run: |
+        agent-skills scan "${{ inputs.path }}" \
+          --policy "${{ inputs.policy }}" \
+          --format "${{ inputs.format }}" \
+          --output scan-results.sarif
+        echo "result=$?" >> $GITHUB_OUTPUT
+
+    - name: Upload SARIF results
+      if: inputs.format == 'sarif'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: scan-results.sarif
+
+    - name: Check failure threshold
+      if: failure() && inputs.fail-on != 'never'
+      shell: bash
+      run: |
+        echo "::error::Skill scan blocked — review scan-results.sarif for details"
+        exit 1

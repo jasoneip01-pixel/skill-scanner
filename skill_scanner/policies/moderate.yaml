@@ -1,0 +1,27 @@
+# Moderate Security Policy — balanced security for team use
+policy:
+  name: security.moderate
+  description: Balanced security policy suitable for most team environments
+  level: moderate
+
+  block_on:
+    - prompt_injection.critical
+    - data_exfiltration.high
+    - new_payment_tool.requires_guard
+    - credential_exposure
+    - manifest.invalid_yaml
+    - resource.executable
+
+  warn_on:
+    - network_access_without_justification
+    - business_claim_changed
+    - tool_permission_mismatch
+    - secrets_file_access
+    - dangerous_script
+    - suspicious_network_access
+    - manifest.missing_field
+
+  thresholds:
+    max_critical: 0
+    max_warnings: 5
+    risk_score_max: 60
