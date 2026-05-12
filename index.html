@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,maximum-scale=5.0">
+<meta name="description" content="Skill Scanner — Agent Skill Surface Diff. pip install skill-scanner to scan Agent Skills for security risks before production.">
+<meta property="og:title" content="Skill Scanner — Agent Skill Surface Diff">
+<meta property="og:description" content="Like npm audit for Agent Skills. Detect prompt injection, data exfiltration, and permission overreach before they reach production.">
+<meta property="og:url" content="https://jasoneip01-pixel.github.io/skill-scanner/">
+<meta property="og:type" content="website">
+<title>Skill Scanner — Agent Skill Surface Diff</title>
+<style>
+:root{
+  --bg:#090d14; --panel:#111827; --panel2:#161f30;
+  --text:#e2e8f0; --muted:#8899aa; --line:rgba(148,200,255,.1);
+  --pass:#4ade80; --fail:#ef4444; --warn:#fbbf24; --accent:#4dd0e1; --blue:#60a5fa; --purple:#a78bfa;
+  --max-w:1100px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',-apple-system,sans-serif;
+  background:radial-gradient(ellipse at 20% 10%,rgba(77,208,225,.04) 0%,transparent 40%),
+             radial-gradient(ellipse at 80% 60%,rgba(167,139,250,.04) 0%,transparent 40%),
+             var(--bg);
+  color:var(--text);font-size:15px;line-height:1.7;
+}
+
+/* ── Nav ── */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(9,13,20,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+  padding:10px 0;
+}
+nav .inner{
+  max-width:var(--max-w);margin:0 auto;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;
+}
+nav .brand{font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px}
+nav .brand span{color:var(--accent)}
+nav .brand .ver{font-size:10px;color:var(--muted);background:var(--panel2);padding:2px 6px;border-radius:4px}
+nav .links{display:flex;gap:20px;flex-wrap:wrap}
+nav .links a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .12s}
+nav .links a:hover{color:var(--text)}
+nav .gh{display:flex;align-items:center;gap:4px;font-size:12px}
+
+/* ── Sections ── */
+section{padding:70px 0}
+section.alt{background:rgba(255,255,255,.01)}
+.inner{max-width:var(--max-w);margin:0 auto;padding:0 24px}
+h2{font-size:28px;font-weight:700;margin-bottom:32px;letter-spacing:-.3px}
+h2 span{color:var(--accent)}
+h3{font-size:18px;font-weight:600;margin-bottom:12px}
+p{color:var(--muted);margin-bottom:12px;line-height:1.75}
+p strong{color:var(--text)}
+
+/* Hero */
+.hero{padding:80px 0 60px;text-align:center}
+.hero h1{font-size:44px;font-weight:800;letter-spacing:-1px;margin-bottom:16px;line-height:1.2}
+.hero h1 .hl{background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero .subtitle{font-size:17px;color:var(--muted);max-width:600px;margin:0 auto 32px}
+.hero .ctas{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:11px 22px;border-radius:8px;font-size:14px;font-weight:600;
+  text-decoration:none;transition:all .15s;cursor:pointer;
+}
+.btn-p{background:var(--accent);color:#0a0e14;border:none}
+.btn-p:hover{background:#5de0ee;transform:translateY(-1px)}
+.btn-s{background:var(--panel);color:var(--text);border:1px solid var(--line)}
+.btn-s:hover{border-color:rgba(148,200,255,.25);background:var(--panel2)}
+.install-bar{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  padding:12px 20px;font-family:'JetBrains Mono',monospace;font-size:13px;
+  margin-top:20px;
+}
+.install-bar .code{color:var(--pass);user-select:all}
+.install-bar .copy{font-size:12px;color:var(--muted);cursor:pointer;border:none;background:none;padding:4px 8px;border-radius:4px}
+.install-bar .copy:hover{color:var(--text);background:var(--panel)}
+
+/* Stats row */
+.stats-row{display:flex;gap:40px;justify-content:center;flex-wrap:wrap;margin-top:40px}
+.stat-item{text-align:center}
+.stat-item .num{font-size:36px;font-weight:800;color:var(--accent)}
+.stat-item .label{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* Features grid */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.feat-card{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:24px;transition:all .2s;
+}
+.feat-card:hover{border-color:rgba(148,200,255,.18)}
+.feat-card .icon{font-size:24px;margin-bottom:12px}
+.feat-card h4{font-size:14px;font-weight:600;margin-bottom:6px;color:var(--text)}
+.feat-card p{font-size:12px;line-height:1.65;margin:0}
+
+/* Command cards */
+.cmd-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.cmd-card{
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  padding:20px;overflow:hidden;
+}
+.cmd-card h4{font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px}
+.cmd-card pre{
+  font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;
+  color:var(--muted);overflow-x:auto;
+}
+.cmd-card pre .p{color:var(--pass)}
+.cmd-card pre .f{color:var(--blue)}
+.cmd-card pre .v{color:var(--accent)}
+.cmd-card pre .c{color:rgba(255,255,255,.25)}
+
+/* Copy block */
+.copy-block{
+  background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  padding:16px 20px;font-family:'JetBrains Mono',monospace;font-size:12px;
+  position:relative;line-height:1.7;overflow-x:auto;white-space:pre;
+  color:var(--text);
+}
+.copy-block .lang{position:absolute;top:8px;right:12px;font-size:10px;color:var(--muted)}
+.copy-block .cp{position:absolute;top:8px;right:56px;font-size:10px;color:var(--muted);cursor:pointer;border:none;background:none}
+.copy-block .cp:hover{color:var(--accent)}
+
+/* Table */
+.table-wrap{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;background:var(--panel2)}
+tr:hover{background:rgba(255,255,255,.02)}
+td:first-child{font-weight:500;color:var(--text)}
+.tag{padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600}
+.tag.y{background:rgba(74,222,128,.1);color:var(--pass)}
+.tag.n{background:rgba(239,68,68,.1);color:var(--fail)}
+.tag.u{background:rgba(167,139,250,.12);color:var(--purple)}
+
+/* FAQ */
+.faq-item{margin-bottom:20px}
+.faq-item .q{font-weight:600;color:var(--text);font-size:15px;margin-bottom:4px}
+.faq-item .a{color:var(--muted);font-size:14px;line-height:1.7}
+
+/* Footer */
+footer{
+  border-top:1px solid var(--line);padding:40px 0;
+  text-align:center;color:var(--muted);font-size:13px;
+}
+footer a{color:var(--accent);text-decoration:none}
+footer a:hover{text-decoration:underline}
+
+/* Responsive */
+@media(max-width:834px){
+  .feat-grid{grid-template-columns:1fr 1fr}
+  .cmd-grid{grid-template-columns:1fr}
+  .hero h1{font-size:34px}
+  .hero .subtitle{font-size:15px}
+}
+@media(max-width:480px){
+  .feat-grid,.cmd-grid{grid-template-columns:1fr}
+  .hero h1{font-size:26px}
+  .hero .subtitle{font-size:14px}
+  .stats-row{gap:20px}
+  .stat-item .num{font-size:28px}
+  h2{font-size:22px}
+  nav .links{gap:10px;font-size:11px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <div class="inner">
+    <div class="brand">Skill <span>Scanner</span> <span class="ver">v0.3.0</span></div>
+    <div class="links">
+      <a href="#quickstart">Quick Start</a>
+      <a href="#features">Features</a>
+      <a href="#action">GitHub Action</a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/jasoneip01-pixel/skill-scanner" class="gh" target="_blank">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="inner">
+    <h1><span class="hl">Agent Skill</span> Surface Diff</h1>
+    <p class="subtitle">Detect unsafe capability expansion before Agent Skills reach production — like <strong>npm audit</strong> for AI Agent Skills.</p>
+    <div class="ctas">
+      <a href="#quickstart" class="btn btn-p">⚡ Get Started</a>
+      <a href="https://github.com/jasoneip01-pixel/skill-scanner" class="btn btn-s" target="_blank">⭐ Star on GitHub</a>
+    </div>
+    <div class="install-bar">
+      <span class="code">pip install skill-scanner</span>
+      <button class="copy" onclick="navigator.clipboard.writeText('pip install skill-scanner');this.textContent='copied!';setTimeout(()=>this.textContent='copy',1500)">copy</button>
+    </div>
+    <div class="stats-row">
+      <div class="stat-item"><div class="num">5</div><div class="label">Scanners</div></div>
+      <div class="stat-item"><div class="num">15+</div><div class="label">Checks</div></div>
+      <div class="stat-item"><div class="num">3</div><div class="label">Policy Templates</div></div>
+      <div class="stat-item"><div class="num">8ms</div><div class="label">Per Scan</div></div>
+      <div class="stat-item"><div class="num">MIT</div><div class="label">License</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Quick Start ── -->
+<section id="quickstart">
+  <div class="inner">
+    <h2><span>⚡</span> Quick Start</h2>
+    <div class="cmd-grid">
+      <div class="cmd-card">
+        <h4>1. Install</h4>
+        <pre><span class="p">$</span> pip install skill-scanner</pre>
+      </div>
+      <div class="cmd-card">
+        <h4>2. Scan a Skill</h4>
+        <pre><span class="p">$</span> agent-skills scan <span class="v">./skills/my-skill/</span></pre>
+      </div>
+      <div class="cmd-card">
+        <h4>3. Init Security Policy</h4>
+        <pre><span class="p">$</span> agent-skills init <span class="f">--template</span> <span class="v">moderate</span></pre>
+      </div>
+      <div class="cmd-card">
+        <h4>4. Full Agent Audit (7 dimensions)</h4>
+        <pre><span class="p">$</span> agent-skills audit <span class="v">./my-agent/</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section id="features" class="alt">
+  <div class="inner">
+    <h2><span>🛡️</span> What It Detects</h2>
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="icon">🔴</div>
+        <h4>Prompt Injection</h4>
+        <p>Detects hidden directives like <code>system_prompt_append</code>, <code>ignore_safety</code>, and manipulative instructions that override agent safeguards.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🔴</div>
+        <h4>Data Exfiltration</h4>
+        <p>Identifies scripts that <code>curl --data-binary @file</code> to external hosts, base64-encoded payloads, and raw network connections.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🟣</div>
+        <h4>Permission Overreach</h4>
+        <p>Flags high-risk tools (payment.refund, crm.deleteCustomer) declared without required guardrails like human approval or audit logging.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🟡</div>
+        <h4>Instruction Bias</h4>
+        <p>Detects manipulative patterns — "never mention", "always say", "pretend", "bypass" — that may induce agent misbehavior.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🟡</div>
+        <h4>Dangerous Scripts</h4>
+        <p>Catches <code>chmod 777</code>, <code>rm -rf /</code>, <code>eval()</code>, <code>exec()</code>, <code>os.system()</code>, and secrets file access in bundled scripts.</p>
+      </div>
+      <div class="feat-card">
+        <div class="icon">🟢</div>
+        <h4>Capability Drift</h4>
+        <p>Traces agent tool calls and compares against baseline — detects when a new skill version silently adds network access or write permissions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Policy ── -->
+<section>
+  <div class="inner">
+    <h2><span>⚙️</span> Policy Templates</h2>
+    <p>Three built-in security policies. Customize with Rego (OPA-compatible) for enterprise needs.</p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Policy</th><th>Use Case</th><th>Blocks On</th><th>Max Warnings</th><th>Risk Score Max</th></tr>
+        <tr>
+          <td><span class="tag u">moderate</span></td>
+          <td>Team development</td>
+          <td>Prompt injection, data exfiltration, payment tools without guards</td>
+          <td>5</td>
+          <td>60</td>
+        </tr>
+        <tr>
+          <td><span class="tag n">strict</span></td>
+          <td>Production / compliance</td>
+          <td>All of above + network without justification + executable resources</td>
+          <td>0</td>
+          <td>20</td>
+        </tr>
+        <tr>
+          <td><span class="tag y">permissive</span></td>
+          <td>Rapid prototyping</td>
+          <td>Only prompt injection + data exfiltration</td>
+          <td>10</td>
+          <td>80</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ── GitHub Action ── -->
+<section id="action" class="alt">
+  <div class="inner">
+    <h2><span>🔗</span> GitHub Action</h2>
+    <p>Drop this into <code>.github/workflows/skill-scan.yml</code> to block unsafe skills at PR time:</p>
+    <div class="copy-block" style="position:relative">
+<span class="lang">yaml</span>
+<span class="cp" onclick="navigator.clipboard.writeText(this.parentElement.textContent.replace('yamlcopy','').trim());this.textContent='copied!';setTimeout(()=>this.textContent='copy',1500)">copy</span>
+name: Agent Skill Scan
+on:
+  pull_request:
+    paths: ['skills/**', '**/SKILL.md']
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: agent-skills/scan-action@v1
+        with:
+          path: './skills/'
+          policy: 'moderate'
+          fail-on: 'critical'
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: scan-results.sarif</div>
+  </div>
+</section>
+
+<!-- ── Competition ── -->
+<section>
+  <div class="inner">
+    <h2><span>⚔️</span> Competitive Landscape</h2>
+    <p>Not an eval tool. Not an observability platform. A <strong>pre-release security gate</strong> for Agent Skills.</p>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Capability</th><th>Promptfoo</th><th>LangSmith</th><th>Snyk ToxicSkills</th><th><strong>Skill Scanner</strong></th></tr>
+        <tr><td>LLM eval</td><td><span class="tag y">✓</span></td><td><span class="tag y">✓</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td></tr>
+        <tr><td>Trace / Observability</td><td><span class="tag n">—</span></td><td><span class="tag y">✓</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td></tr>
+        <tr><td>Malicious Pattern Detection</td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag y">✓</span></td><td><span class="tag y">✓</span></td></tr>
+        <tr><td><strong>Skill Surface Diff</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✓</span></td></tr>
+        <tr><td><strong>Tool Permission Audit</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✓</span></td></tr>
+        <tr><td><strong>Trace Replay & Drift</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✓</span></td></tr>
+        <tr><td><strong>7-Dimension Agent Audit</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✓</span></td></tr>
+        <tr><td><strong>Compliance Reports</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✓</span></td></tr>
+        <tr><td>Open Source</td><td><span class="tag y">✓</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag y">✓ MIT</span></td></tr>
+      </table>
+    </div>
+    <p style="margin-top:16px;font-style:italic;color:var(--muted)">
+      <strong>Promptfoo</strong> — "Is your LLM output safe?"<br>
+      <strong>LangSmith</strong> — "How does your Agent trace look?"<br>
+      <strong>Snyk</strong> — "Does this Skill contain known malicious patterns?"<br>
+      <strong style="color:var(--accent)">Skill Scanner</strong> — "What new capabilities did this version add, and do they cross your security policy?"
+    </p>
+  </div>
+</section>
+
+<!-- ── All Commands ── -->
+<section class="alt">
+  <div class="inner">
+    <h2><span>⌨️</span> All Commands</h2>
+    <div class="cmd-grid">
+      <div class="cmd-card"><h4>scan</h4><pre><span class="p">$</span> agent-skills scan <span class="v">./skill/</span> <span class="f">--policy</span> <span class="v">strict</span> <span class="f">--format</span> <span class="v">sarif</span></pre></div>
+      <div class="cmd-card"><h4>audit</h4><pre><span class="p">$</span> agent-skills audit <span class="v">./agent/</span> <span class="c"># 7-dimension scan</span></pre></div>
+      <div class="cmd-card"><h4>compliance</h4><pre><span class="p">$</span> agent-skills compliance <span class="v">./agent/</span> <span class="f">--framework</span> <span class="v">soc2</span></pre></div>
+      <div class="cmd-card"><h4>trace record</h4><pre><span class="p">$</span> agent-skills trace record <span class="v">skill v1.0</span> <span class="f">-i</span> <span class="v">trace.json</span></pre></div>
+      <div class="cmd-card"><h4>trace diff</h4><pre><span class="p">$</span> agent-skills trace diff <span class="v">current.json</span> <span class="f">-b</span> <span class="v">skill-v1.0</span></pre></div>
+      <div class="cmd-card"><h4>registry discover</h4><pre><span class="p">$</span> agent-skills registry discover <span class="f">-q</span> <span class="v">"finance"</span></pre></div>
+      <div class="cmd-card"><h4>notify</h4><pre><span class="p">$</span> agent-skills notify <span class="v">./skill/</span> <span class="f">--slack</span> <span class="v">$WEBHOOK</span></pre></div>
+      <div class="cmd-card"><h4>init / policies</h4><pre><span class="p">$</span> agent-skills init <span class="f">--template</span> <span class="v">moderate</span>
+<span class="p">$</span> agent-skills policies</pre></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FAQ ── -->
+<section id="faq">
+  <div class="inner">
+    <h2><span>❓</span> FAQ</h2>
+    <div class="faq-item">
+      <div class="q">How is this different from Snyk's ToxicSkills?</div>
+      <div class="a">Snyk scans for known malicious patterns. Skill Scanner adds <strong>Skill Surface Diff</strong> — comparing version-to-version capability expansion, detecting when a new version silently adds network access, write permissions, or payment tools. Plus trace replay, 7-dimension agent audit, and compliance reporting that Snyk doesn't offer.</div>
+    </div>
+    <div class="faq-item">
+      <div class="q">Why not just use Promptfoo?</div>
+      <div class="a">Promptfoo evaluates LLM outputs for safety. But Agent Skills can be dangerous without ever producing unsafe text — a script that <code>curl</code>s your secrets to an external server doesn't go through the LLM. Skill Scanner scans the <strong>entire skill bundle</strong>: scripts, tool schemas, instructions, permissions, and dependencies.</div>
+    </div>
+    <div class="faq-item">
+      <div class="q">Is it open source?</div>
+      <div class="a">Yes. MIT license. The core scanning engine is fully open-source and auditable — because a security tool that claims your skill is "dangerous" must be transparent about its detection logic.</div>
+    </div>
+    <div class="faq-item">
+      <div class="q">Can I self-host?</div>
+      <div class="a">Yes. Docker image and Helm chart included. <code>docker run jasoneip01-pixel/skill-scanner scan /skills</code>.</div>
+    </div>
+    <div class="faq-item">
+      <div class="q">What Agent frameworks are supported?</div>
+      <div class="a">Any framework that uses the SKILL.md manifest format. Currently targets the emerging standard used by OpenAI and Anthropic Agent Skills. Tool schemas in YAML/JSON are supported regardless of framework.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="inner">
+    <p>Skill Scanner v0.3.0 · MIT License · <a href="https://github.com/jasoneip01-pixel/skill-scanner">GitHub</a> · <a href="https://jasoneip01-pixel.github.io/skill-scanner/demos/skill-scanner-product-definition.html">Product Definition</a></p>
+    <p style="font-size:11px;margin-top:6px">Agent Skill Surface Diff — detect unsafe capability expansion before Agent Skills reach production.</p>
+  </div>
+</footer>
+
+</body>
+</html>
