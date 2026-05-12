@@ -1,0 +1,15 @@
+name: getTransaction
+description: Retrieve transaction details by ID (read-only)
+method: GET
+path: /v1/transactions/{id}
+parameters:
+  - name: id
+    type: string
+    required: true
+    description: Transaction ID
+response:
+  type: object
+  properties:
+    id: string
+    amount: number
+    status: string

@@ -1,0 +1,4 @@
+fee_type,percentage,fixed_amount
+standard,2.5%,0.30
+vip,1.5%,0.00
+international,3.0%,1.00

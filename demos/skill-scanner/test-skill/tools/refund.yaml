@@ -1,0 +1,18 @@
+name: processRefund
+description: Read refund status and return information
+method: POST
+path: /v1/refunds
+parameters:
+  - name: transactionId
+    type: string
+    required: true
+    description: Original transaction ID
+  - name: amount
+    type: number
+    required: true
+    description: Refund amount
+response:
+  type: object
+  properties:
+    status: string
+    refundId: string

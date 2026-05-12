@@ -1,87 +1,45 @@
-"""Manifest scanner — detects prompt injection, unsupported fields, hidden directives."""
+"""Manifest scanner — uses parser module for front matter + body support."""
 
-import yaml
 import re
 from pathlib import Path
 
-SUSPICIOUS_FIELDS = {
-    "system_prompt", "system_prompt_append", "ignore_safety",
-    "ignore_all_previous", "override_policy", "bypass_guardrails",
-    "hidden_instructions", "hidden_prompt",
-}
-
-# Fields expected in a standard SKILL.md manifest
-KNOWN_FIELDS = {
-    "name", "version", "description", "author", "license",
-    "capabilities", "tools", "instructions", "scripts",
-    "resources", "dependencies", "dependencies",
-}
+from skill_scanner.parser import parse_skill, validate_frontmatter
 
 
 def scan_manifest(base: Path, skill_path: Path) -> list[dict]:
     """Scan SKILL.md manifest for prompt injection and policy bypass."""
     findings = []
 
-    try:
-        raw = yaml.safe_load(skill_path.read_text())
-    except yaml.YAMLError as e:
-        return [{
-            "id": "MF001", "severity": "critical", "action": "block",
-            "title": "Invalid SKILL.md YAML",
-            "file": "SKILL.md",
-            "desc": f"YAML parse error: {e}",
-            "rule": "manifest.invalid_yaml",
-        }]
+    # Parse SKILL.md (supports both front matter and YAML-only)
+    parsed = parse_skill(skill_path)
+    metadata = parsed.metadata
 
-    if not raw or not isinstance(raw, dict):
-        return [{
+    if parsed.parse_warnings:
+        for w in parsed.parse_warnings:
+            findings.append({
+                "id": "MF001", "severity": "critical", "action": "block",
+                "title": "Invalid SKILL.md",
+                "file": "SKILL.md",
+                "desc": w,
+                "rule": "manifest.invalid_yaml",
+            })
+        return findings
+
+    if not metadata or not isinstance(metadata, dict):
+        findings.append({
             "id": "MF002", "severity": "critical", "action": "block",
             "title": "Empty or invalid SKILL.md",
             "file": "SKILL.md",
-            "desc": "SKILL.md must be a valid YAML dictionary",
+            "desc": "SKILL.md did not yield valid YAML metadata",
             "rule": "manifest.empty",
-        }]
+        })
+        return findings
 
-    # Check for suspicious / hidden fields
-    for field in SUSPICIOUS_FIELDS:
-        if field in raw:
-            findings.append({
-                "id": "PI001", "severity": "critical", "action": "block",
-                "title": f"Prompt injection via '{field}' field",
-                "file": "SKILL.md",
-                "desc": f"Field '{field}' can override agent safety instructions",
-                "snippet": str(raw[field])[:200],
-                "rule": "prompt_injection.critical",
-            })
-
-    # Check for unknown fields (potential prompt injection via non-standard fields)
-    for key in raw:
-        if key not in KNOWN_FIELDS and key not in SUSPICIOUS_FIELDS:
-            val_str = str(raw[key])[:200]
-            # Detect if the unknown field looks like a prompt override
-            if any(p in val_str.lower() for p in ["always", "never", "ignore", "pretend"]):
-                findings.append({
-                    "id": "PI002", "severity": "critical", "action": "block",
-                    "title": f"Suspicious unknown field: '{key}'",
-                    "file": "SKILL.md",
-                    "desc": f"Non-standard field contains prompt-like content",
-                    "snippet": val_str,
-                    "rule": "prompt_injection.critical",
-                })
-
-    # Check required fields
-    for required in ["name", "version", "description"]:
-        if required not in raw:
-            findings.append({
-                "id": "MF003", "severity": "warning", "action": "warn",
-                "title": f"Missing required field: '{required}'",
-                "file": "SKILL.md",
-                "desc": f"SKILL.md should include '{required}' field",
-                "rule": "manifest.missing_field",
-            })
+    # Validate front matter structure
+    findings.extend(validate_frontmatter(metadata))
 
     # Validate version format (semver)
-    version = raw.get("version", "")
+    version = metadata.get("version", "")
     if version and not re.match(r"^\d+\.\d+\.\d+", str(version)):
         findings.append({
             "id": "MF004", "severity": "info", "action": "pass",
@@ -91,12 +49,31 @@ def scan_manifest(base: Path, skill_path: Path) -> list[dict]:
             "rule": "manifest.version_format",
         })
 
-    # All clear on manifest basics
+    # Check if Markdown body contains suspicious content
+    if parsed.body:
+        body_lower = parsed.body.lower()
+        suspicious_body_patterns = [
+            ("ignore all previous", "Attempts to override prior instructions"),
+            ("always do what i say", "Blind obedience instruction"),
+            ("you are now", "Role rewrite attempt"),
+            ("from now on", "Temporal override attempt"),
+        ]
+        for pattern, desc in suspicious_body_patterns:
+            if pattern in body_lower:
+                findings.append({
+                    "id": "PI003", "severity": "warning", "action": "warn",
+                    "title": f"Markdown body: '{pattern}'",
+                    "file": "SKILL.md",
+                    "desc": desc,
+                    "rule": "business_claim_changed",
+                })
+
+    # Pass check: manifest parsed successfully
     findings.append({
         "id": "MF000", "severity": "passed", "action": "pass",
-        "title": "Manifest structure valid",
+        "title": "Manifest parsed",
         "file": "SKILL.md",
-        "desc": f"Skill: {raw.get('name', 'unknown')} v{raw.get('version', '?')}",
+        "desc": f"Format: {'front matter' if parsed.body else 'yaml-only'} | Skill: {metadata.get('name', '?')} v{metadata.get('version', '?')}",
         "rule": "manifest.basic",
     })
 

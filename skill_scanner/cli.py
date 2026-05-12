@@ -52,7 +52,8 @@ def scan(skill_dir, policy, output_format, output, diff_mode, baseline):
     SKILL_DIR: Path to the skill directory containing SKILL.md
     """
     try:
-        result = scan_skill(skill_dir, policy_name=policy)
+        result = scan_skill(skill_dir, policy_name=policy,
+                           baseline_dir=baseline, diff_mode=diff_mode)
     except FileNotFoundError as e:
         console.print(f"[red]Error:[/red] {e}")
         sys.exit(1)
