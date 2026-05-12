@@ -79,12 +79,33 @@ class RegistryScanner:
     def scan_registry_skill(self, raw_url: str) -> Optional[dict]:
         """Fetch and scan a skill from a raw URL."""
         import urllib.request
+        import urllib.parse
+
+        # URL safety checks: only allow known code hosts
+        parsed = urllib.parse.urlparse(raw_url)
+        allowed_domains = {
+            "raw.githubusercontent.com", "github.com",
+            "githubusercontent.com", "clawhub.com",
+        }
+        if parsed.hostname not in allowed_domains:
+            return None
+        # Block private/internal IP ranges
+        import socket
+        try:
+            ip = socket.gethostbyname(parsed.hostname)
+            private_prefixes = ("10.", "172.16.", "192.168.", "127.", "169.254.")
+            if any(ip.startswith(p) for p in private_prefixes):
+                return None
+        except socket.gaierror:
+            return None
 
         try:
             req = urllib.request.Request(raw_url)
             req.add_header("User-Agent", "skill-scanner")
             with urllib.request.urlopen(req, timeout=10) as resp:
-                content = resp.read().decode("utf-8")
+                # Limit response size
+                MAX_BYTES = 1 * 1024 * 1024  # 1MB
+                content = resp.read(MAX_BYTES).decode("utf-8", errors="replace")
         except Exception:
             return None
 

@@ -1,19 +1,11 @@
-"""SKILL.md parser — supports YAML front matter + Markdown body.
+"""Parser utilities — SKILL.md front matter parser + safe path resolution."""
 
-Real Agent Skill files are typically:
-    ---
-    name: my-skill
-    version: 1.0.0
-    ...
-    ---
-    Markdown instruction body here ...
-"""
-
+import os
 import re
-import yaml
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Optional
+
+MAX_SKILL_FILE_SIZE = 1 * 1024 * 1024  # 1MB
 
 
 @dataclass
@@ -22,7 +14,43 @@ class ParsedSkill:
     metadata: dict = field(default_factory=dict)
     body: str = ""
     raw_text: str = ""
+    errors: list = field(default_factory=list)
     parse_warnings: list = field(default_factory=list)
+
+
+def safe_join(base: Path, rel: str) -> Path | None:
+    """Safely join a path under base, preventing directory traversal and symlink escape.
+
+    Returns None if the resolved path is outside base.
+    """
+    if not rel or not isinstance(rel, str):
+        return None
+    # Reject absolute paths
+    if os.path.isabs(rel):
+        return None
+    # Normalize and resolve
+    try:
+        candidate = (base / rel).resolve()
+    except (ValueError, OSError):
+        return None
+    root = base.resolve()
+    # Check that candidate is within root
+    try:
+        candidate.relative_to(root)
+        return candidate
+    except ValueError:
+        return None
+
+
+def safe_resolve(path: Path) -> Path | None:
+    """Resolve a path and verify it stays under its parent."""
+    try:
+        resolved = path.resolve()
+        parent = path.parent.resolve()
+        resolved.relative_to(parent)
+        return resolved
+    except (ValueError, OSError):
+        return None
 
 
 def parse_skill(path: Path) -> ParsedSkill:
@@ -30,11 +58,26 @@ def parse_skill(path: Path) -> ParsedSkill:
     1. YAML-only (legacy): yaml.safe_load on whole file
     2. Front matter + body: ---\nYAML\n---\nMarkdown
     """
-    raw = path.read_text(encoding="utf-8")
+    import yaml
+
+    if not path.exists():
+        return ParsedSkill(errors=[f"File not found: {path}"])
+
+    file_size = path.stat().st_size
+    if file_size > MAX_SKILL_FILE_SIZE:
+        return ParsedSkill(
+            errors=[f"File too large: {file_size} bytes (max {MAX_SKILL_FILE_SIZE})"]
+        )
+
+    try:
+        raw = path.read_text(encoding="utf-8", errors="replace")
+    except (OSError, UnicodeDecodeError) as e:
+        return ParsedSkill(errors=[f"Cannot read file: {e}"])
+
     stripped = raw.strip()
 
     # Try front matter first: ---\n...\n---
-    fm_match = re.match(r"^---\s*\n(.*?)\n---\s*\n?(.*)", stripped, re.DOTALL)
+    fm_match = re.match(r"^---\s*\r?\n(.*?)\r?\n---\s*\r?\n?(.*)", stripped, re.DOTALL)
 
     if fm_match:
         yaml_text = fm_match.group(1)
@@ -86,8 +129,7 @@ def validate_frontmatter(metadata: dict) -> list[dict]:
             findings.append({
                 "id": "MF003", "severity": "warning", "action": "warn",
                 "title": f"Missing required field: '{req}'",
-                "file": "SKILL.md",
-                "rule": "manifest.missing_field",
+                "file": "SKILL.md", "rule": "manifest.missing_field",
             })
 
     # Suspicious fields
@@ -110,9 +152,24 @@ def validate_frontmatter(metadata: dict) -> list[dict]:
                 findings.append({
                     "id": "PI002", "severity": "critical", "action": "block",
                     "title": f"Suspicious unknown field: '{key}'",
-                    "file": "SKILL.md",
-                    "rule": "prompt_injection.critical",
+                    "file": "SKILL.md", "rule": "prompt_injection.critical",
                     "snippet": val_str,
                 })
 
     return findings
+
+
+FINDING_SCHEMA = {"id", "severity", "title", "file", "rule"}
+
+
+def validate_finding(f: dict) -> list[str]:
+    """Validate that a finding has all required fields. Returns error list."""
+    errors = []
+    for key in FINDING_SCHEMA:
+        if key not in f:
+            errors.append(f"Missing required finding field: '{key}'")
+    if "severity" in f and f["severity"] not in ("critical", "warning", "passed", "info"):
+        errors.append(f"Invalid severity: {f['severity']}")
+    if "action" in f and f["action"] not in ("block", "warn", "pass", "approval_required"):
+        errors.append(f"Invalid action: {f['action']}")
+    return errors

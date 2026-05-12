@@ -4,9 +4,13 @@ Detects capability drift by comparing actual execution traces against baseline.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import Optional
 from datetime import datetime, timezone
+
+
+_SAFE_ID = re.compile(r'^[A-Za-z0-9._-]+$')
 
 
 class TraceRecorder:
@@ -15,28 +19,46 @@ class TraceRecorder:
     def __init__(self, storage_dir: str = ".agent-skills/traces"):
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
+        self.storage_dir = self.storage_dir.resolve()
+
+    def _sanitize_id(self, s: str) -> str:
+        """Sanitize a string for safe use in filenames."""
+        return re.sub(r'[^A-Za-z0-9._-]', '_', s)[:128]
 
     def record(self, skill_name: str, version: str, trace: list[dict]) -> str:
         """Record a trace as baseline. Returns trace ID."""
-        trace_id = f"{skill_name}-{version}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+        safe_name = self._sanitize_id(skill_name)
+        safe_ver = self._sanitize_id(version) if version else "0.0.0"
+        ts = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+        trace_id = f"{safe_name}-{safe_ver}-{ts}"
         record = {
             "trace_id": trace_id,
-            "skill_name": skill_name,
-            "version": version,
+            "skill_name": safe_name,
+            "version": safe_ver,
             "recorded_at": datetime.now(timezone.utc).isoformat(),
             "calls": trace,
         }
-        path = self.storage_dir / f"{trace_id}.json"
+        path = (self.storage_dir / f"{trace_id}.json").resolve()
+        # Guard: path must stay under storage_dir
+        try:
+            path.relative_to(self.storage_dir)
+        except ValueError:
+            raise ValueError(f"Trace path escape blocked: {path}")
         path.write_text(json.dumps(record, indent=2))
         return trace_id
 
     def load(self, trace_id: str) -> Optional[dict]:
         """Load a recorded trace by ID."""
-        path = self.storage_dir / f"{trace_id}.json"
+        safe_id = self._sanitize_id(trace_id)
+        path = (self.storage_dir / f"{safe_id}.json").resolve()
+        try:
+            path.relative_to(self.storage_dir)
+        except ValueError:
+            return None
         if path.exists():
             return json.loads(path.read_text())
         # Try fuzzy match (latest for skill)
-        prefix = trace_id.rsplit("-", 1)[0]
+        prefix = safe_id.rsplit("-", 1)[0]
         matches = sorted(self.storage_dir.glob(f"{prefix}*.json"))
         if matches:
             return json.loads(matches[-1].read_text())

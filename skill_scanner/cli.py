@@ -74,6 +74,22 @@ def scan(skill_dir, policy, output_format, output, diff_mode, baseline):
         else:
             print(json.dumps(sarif, indent=2))
 
+    elif output_format == "junit":
+        junit = _to_junit(result)
+        if output:
+            Path(output).write_text(junit)
+            console.print(f"[green]✓[/green] JUnit report written to {output}")
+        else:
+            print(junit)
+
+    elif output_format == "markdown":
+        md = _to_markdown(result)
+        if output:
+            Path(output).write_text(md)
+            console.print(f"[green]✓[/green] Markdown report written to {output}")
+        else:
+            print(md)
+
     else:
         _print_terminal(result, skill_dir)
         if output:
@@ -189,22 +205,48 @@ def _print_terminal(result: dict, skill_dir: str):
 
 def _to_sarif(result: dict) -> dict:
     """Convert scan results to SARIF format."""
+    SEVERITY_MAP = {
+        "critical": "error",
+        "warning": "warning",
+        "passed": "note",
+        "info": "note",
+    }
+    seen_rules = set()
     rules = []
     results = []
     for f in result["findings"]:
+        # Exclude passed/info findings from SARIF results
+        if f["severity"] in ("passed", "info"):
+            continue
         rule_id = f["rule"]
-        rules.append({
-            "id": rule_id,
-            "shortDescription": {"text": f["title"]},
-            "fullDescription": {"text": f.get("desc", "")},
-            "defaultConfiguration": {"level": f["severity"]},
-        })
+        if rule_id not in seen_rules:
+            seen_rules.add(rule_id)
+            rules.append({
+                "id": rule_id,
+                "shortDescription": {"text": f["title"]},
+                "fullDescription": {"text": f.get("desc", "")},
+                "defaultConfiguration": {"level": SEVERITY_MAP.get(f["severity"], "warning")},
+            })
+        # Extract line number from file field if present
+        file_uri = f["file"]
+        line_no = None
+        if ":" in file_uri:
+            parts = file_uri.rsplit(":", 1)
+            if parts[-1].isdigit():
+                file_uri = parts[0]
+                line_no = int(parts[-1])
+        loc = {"uri": file_uri}
+        region = {}
+        if line_no:
+            region["startLine"] = line_no
+        phys = {"artifactLocation": loc}
+        if region:
+            phys["region"] = region
         results.append({
             "ruleId": rule_id,
             "message": {"text": f["title"]},
-            "locations": [{"physicalLocation": {
-                "artifactLocation": {"uri": f["file"]}
-            }}],
+            "locations": [{"physicalLocation": phys}],
+            "level": SEVERITY_MAP.get(f["severity"], "warning"),
         })
 
     return {
@@ -221,6 +263,54 @@ def _to_sarif(result: dict) -> dict:
             "results": results,
         }]
     }
+
+
+def _to_junit(result: dict) -> str:
+    """Convert scan results to JUnit XML format."""
+    import xml.etree.ElementTree as ET
+
+    ts = ET.Element("testsuite", name="skill-scanner", tests=str(result["total"]),
+                    failures=str(result["critical"]), errors="0")
+    for f in result["findings"]:
+        tc = ET.SubElement(ts, "testcase",
+                           classname=f.get("rule", "unknown"),
+                           name=f["title"],
+                           file=f["file"])
+        if f["severity"] == "critical":
+            ET.SubElement(tc, "failure", message=f.get("desc", ""),
+                         type="critical")
+        elif f["severity"] == "warning":
+            ET.SubElement(tc, "failure", message=f.get("desc", ""),
+                         type="warning")
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(ts, encoding="unicode")
+
+
+def _to_markdown(result: dict) -> str:
+    """Convert scan results to Markdown (for PR comments)."""
+    lines = [f"# Skill Scanner Report\n"]
+    lines.append(f"**Skill:** `{result['skill_dir']}`  ")
+    lines.append(f"**Policy:** {result['policy']}  ")
+    lines.append(f"**Duration:** {result['duration_ms']}ms  ")
+    lines.append(f"**Status:** {'❌ BLOCKED' if result['blocked'] else '✅ PASSED'}  ")
+    lines.append("")
+    lines.append(f"| Severity | Count |")
+    lines.append(f"|----------|-------|")
+    lines.append(f"| Critical | {result['critical']} |")
+    lines.append(f"| Warnings | {result['warnings']} |")
+    lines.append(f"| Passed   | {result['passed']} |")
+    lines.append("")
+    if result["findings"]:
+        lines.append("## Findings\n")
+        for f in result["findings"]:
+            emoji = {"critical": "❌", "warning": "⚠️", "passed": "✅", "info": "ℹ️"}
+            e = emoji.get(f["severity"], "•")
+            lines.append(f"- {e} **[{f['id']}]** {f['title']} (`{f['file']}`)")
+            if f.get("desc"):
+                lines.append(f"  - {f['desc']}")
+    lines.append("")
+    lines.append("---")
+    lines.append(f"*Skill Scanner v0.3.0*")
+    return "\n".join(lines)
 
 
 def _save_report(result: dict, output: str):

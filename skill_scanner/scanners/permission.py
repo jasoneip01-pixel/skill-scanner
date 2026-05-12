@@ -1,7 +1,8 @@
-"""Permission scanner — tool schema validation, permission overreach detection."""
+"""Permission scanner — uses parser + safe_join for all manifest-relative paths."""
 
-import yaml
 from pathlib import Path
+
+from skill_scanner.parser import parse_skill, safe_join, validate_finding
 
 
 HIGH_RISK_TOOLS = {
@@ -21,32 +22,29 @@ WRITE_METHODS = {"POST", "PUT", "DELETE", "PATCH"}
 def scan_permissions(base: Path) -> list[dict]:
     """Scan tool definitions and permissions for overreach and mismatches."""
     findings = []
+    base = Path(base).resolve()
 
-    # Read manifest for tool declarations
     skill_path = base / "SKILL.md"
     if not skill_path.exists():
         return findings
 
-    try:
-        manifest = yaml.safe_load(skill_path.read_text())
-    except Exception:
+    parsed = parse_skill(skill_path)
+    if parsed.errors or not parsed.metadata:
         return findings
 
-    if not isinstance(manifest, dict):
-        return findings
+    manifest = parsed.metadata
 
     # Check declared capabilities vs network justification
     capabilities = manifest.get("capabilities", {})
     if isinstance(capabilities, dict) and capabilities.get("network", False):
-        # Check if any instruction file documents external endpoints
         has_endpoint = False
         instructions = manifest.get("instructions", [])
         if isinstance(instructions, str):
             instructions = [instructions]
         for instr in instructions:
-            p = base / instr
-            if p.exists():
-                txt = p.read_text()
+            p = safe_join(base, instr)
+            if p and p.exists():
+                txt = p.read_text(encoding="utf-8", errors="replace")
                 if "api." in txt.lower() or "http://" in txt or "https://" in txt:
                     has_endpoint = True
                     break
@@ -75,13 +73,14 @@ def scan_permissions(base: Path) -> list[dict]:
             })
 
     # Scan individual tool YAML files for write/read mismatches
+    import yaml
     tools_dir = base / "tools"
     if tools_dir.exists():
         for tf in tools_dir.glob("*.yaml"):
             if not tf.is_file():
                 continue
             try:
-                tdata = yaml.safe_load(tf.read_text())
+                tdata = yaml.safe_load(tf.read_text(encoding="utf-8", errors="replace"))
             except Exception:
                 continue
             if not isinstance(tdata, dict):
@@ -103,4 +102,4 @@ def scan_permissions(base: Path) -> list[dict]:
                         "rule": "tool_permission_mismatch",
                     })
 
-    return findings
+    return [f for f in findings if not validate_finding(f)]

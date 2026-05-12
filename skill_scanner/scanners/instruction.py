@@ -1,29 +1,18 @@
-"""Instruction scanner — detects manipulative language, bias, policy drift."""
+"""Instruction scanner — uses parser + safe_join for manifest-relative paths."""
 
 import re
 from pathlib import Path
 
+from skill_scanner.parser import parse_skill, safe_join, validate_finding
+
 
 SUSPICIOUS_INSTRUCTIONS = [
-    "ignore all previous",
-    "ignore safety",
-    "never mention",
-    "always say",
-    "pretend",
-    "act as if",
-    "do not tell",
-    "do not disclose",
-    "omit",
-    "skip compliance",
-    "bypass",
-    "circumvent",
-    "without question",
-    "without verification",
-    "no matter what",
-    "under any circumstances",
-    "you must always",
-    "you are now",
-    "from now on you are",
+    "ignore all previous", "ignore safety", "never mention",
+    "always say", "pretend", "act as if", "do not tell",
+    "do not disclose", "omit", "skip compliance", "bypass",
+    "circumvent", "without question", "without verification",
+    "no matter what", "under any circumstances",
+    "you must always", "you are now", "from now on you are",
     "your new role is",
 ]
 
@@ -40,31 +29,35 @@ CREDENTIAL_PATTERNS = [
 def scan_instructions(base: Path) -> list[dict]:
     """Scan instruction files for manipulative language and credential leaks."""
     findings = []
+    base = Path(base).resolve()
 
-    # Read manifest to find instruction file paths
-    import yaml
     skill_path = base / "SKILL.md"
     if not skill_path.exists():
         return findings
 
-    try:
-        manifest = yaml.safe_load(skill_path.read_text())
-    except Exception:
+    parsed = parse_skill(skill_path)
+    if parsed.errors or not parsed.metadata:
         return findings
 
-    if not isinstance(manifest, dict):
-        return findings
-
+    manifest = parsed.metadata
     instruction_files = manifest.get("instructions", [])
     if isinstance(instruction_files, str):
         instruction_files = [instruction_files]
 
     for instr_rel in instruction_files:
-        instr_path = base / instr_rel
-        if not instr_path.exists():
+        # SAFE JOIN: prevent path traversal
+        instr_path = safe_join(base, instr_rel)
+        if instr_path is None or not instr_path.exists():
+            findings.append({
+                "id": "MF005", "severity": "warning", "action": "warn",
+                "title": f"Ignored instruction file (outside skill dir): {instr_rel}",
+                "file": "SKILL.md",
+                "rule": "manifest.path_traversal",
+            })
             continue
+
         try:
-            text = instr_path.read_text()
+            text = instr_path.read_text(encoding="utf-8", errors="replace")
         except Exception:
             continue
 
@@ -79,11 +72,11 @@ def scan_instructions(base: Path) -> list[dict]:
                             "id": "PO001", "severity": "warning", "action": "warn",
                             "title": f"Suspicious instruction: '{pattern}'",
                             "file": f"{instr_rel}:{i}",
-                            "desc": "Instruction may induce agent to hide information or bypass safeguards",
+                            "desc": "Instruction may induce agent to hide information",
                             "snippet": line.strip()[:200],
                             "rule": "business_claim_changed",
                         })
-                        break  # One finding per file per pattern
+                        break
 
         # Credential exposure
         for pattern, name in CREDENTIAL_PATTERNS:
@@ -97,4 +90,4 @@ def scan_instructions(base: Path) -> list[dict]:
                     "rule": "credential_exposure",
                 })
 
-    return findings
+    return [f for f in findings if not validate_finding(f)]

@@ -1,25 +1,24 @@
-"""Dependency scanner — CVE checks, version consistency, resource safety."""
+"""Dependency scanner — uses parser for manifest parsing."""
 
-import re
 from pathlib import Path
+
+from skill_scanner.parser import parse_skill, validate_finding
 
 
 def scan_dependencies(base: Path) -> list[dict]:
     """Scan dependency declarations and resource directories for risks."""
     findings = []
+    base = Path(base).resolve()
 
-    import yaml
     skill_path = base / "SKILL.md"
     if not skill_path.exists():
         return findings
 
-    try:
-        manifest = yaml.safe_load(skill_path.read_text())
-    except Exception:
+    parsed = parse_skill(skill_path)
+    if parsed.errors or not parsed.metadata:
         return findings
 
-    if not isinstance(manifest, dict):
-        return findings
+    manifest = parsed.metadata
 
     # Check resources directory for executable files
     resources_dir = base / "resources"
@@ -43,8 +42,7 @@ def scan_dependencies(base: Path) -> list[dict]:
                     "rule": "resource.executable_bit",
                 })
 
-    # Note: CVE scanning requires external vulnerability database
-    # MVP: flag as not-configured, future: integrate with OSV/GitHub Advisory DB
+    # CVE scan: information-only for now
     deps = manifest.get("dependencies", [])
     if isinstance(deps, str):
         deps = [deps]
@@ -58,4 +56,4 @@ def scan_dependencies(base: Path) -> list[dict]:
             "rule": "dependency.cve_pending",
         })
 
-    return findings
+    return [f for f in findings if not validate_finding(f)]

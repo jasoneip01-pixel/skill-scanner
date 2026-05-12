@@ -15,10 +15,32 @@ class AgentSurfaceScanner:
 
     DIMENSIONS = ["skill", "tool", "prompt", "model", "rag", "memory", "permission"]
 
+    # Directories to skip during recursive glob
+    IGNORE_DIRS = {".git", "node_modules", "venv", ".venv", "dist", "build",
+                   "__pycache__", ".gitignore", "env", ".env", "target"}
+
+    MAX_GLOB_FILES = 500  # Safety limit on files scanned per glob
+
     def __init__(self, agent_dir: str):
         self.agent_dir = Path(agent_dir)
         if not self.agent_dir.exists():
             raise FileNotFoundError(f"Agent directory not found: {agent_dir}")
+
+    def _safe_glob(self, pattern: str) -> list[Path]:
+        """Recursive glob with exclusions and safety limits."""
+        results = []
+        for p in self.agent_dir.glob(pattern):
+            # Skip paths under ignored directories
+            try:
+                rel = p.relative_to(self.agent_dir)
+                if any(part in self.IGNORE_DIRS for part in rel.parts[:-1]):
+                    continue
+            except ValueError:
+                continue
+            results.append(p)
+            if len(results) >= self.MAX_GLOB_FILES:
+                break
+        return results
 
     def scan_all(self, policy_name: str = "moderate") -> dict:
         """Scan all 7 dimensions of the agent surface."""
@@ -61,7 +83,7 @@ class AgentSurfaceScanner:
 
     def _scan_skill(self) -> dict:
         """Scan skill directory within agent."""
-        skill_dirs = list(self.agent_dir.glob("skills/*/SKILL.md"))
+        skill_dirs = self._safe_glob("skills/*/SKILL.md")
         if not skill_dirs:
             # Try root-level SKILL.md
             if (self.agent_dir / "SKILL.md").exists():
@@ -88,7 +110,7 @@ class AgentSurfaceScanner:
 
     def _scan_tool(self) -> dict:
         """Scan tool definitions for permission overreach."""
-        tool_files = list(self.agent_dir.glob("**/tools/*.yaml"))
+        tool_files = self._safe_glob("**/tools/*.yaml")
         if not tool_files:
             return {"status": "passed", "blocked": False, "critical": 0, "tools_found": 0}
 
@@ -118,7 +140,7 @@ class AgentSurfaceScanner:
 
     def _scan_prompt(self) -> dict:
         """Scan system prompts for injection vulnerabilities and hardcoded secrets."""
-        prompt_files = list(self.agent_dir.glob("**/*prompt*")) + list(self.agent_dir.glob("**/system.md"))
+        prompt_files = self._safe_glob("**/*prompt*") + self._safe_glob("**/system.md")
         if not prompt_files:
             return {"status": "passed", "blocked": False, "critical": 0, "message": "No prompt files found"}
 
@@ -146,7 +168,7 @@ class AgentSurfaceScanner:
 
     def _scan_model(self) -> dict:
         """Record model configuration for audit trail."""
-        config_files = list(self.agent_dir.glob("**/model*.yaml")) + list(self.agent_dir.glob("**/model*.json"))
+        config_files = self._safe_glob("**/model*.yaml") + self._safe_glob("**/model*.json")
         models = []
         for cf in config_files:
             try:
@@ -170,7 +192,7 @@ class AgentSurfaceScanner:
 
     def _scan_rag(self) -> dict:
         """Scan RAG configuration for data governance risks."""
-        rag_files = list(self.agent_dir.glob("**/rag*.yaml")) + list(self.agent_dir.glob("**/knowledge*"))
+        rag_files = self._safe_glob("**/rag*.yaml") + self._safe_glob("**/knowledge*")
         if not rag_files:
             return {"status": "passed", "blocked": False, "critical": 0, "message": "No RAG config found"}
 
@@ -194,7 +216,7 @@ class AgentSurfaceScanner:
 
     def _scan_memory(self) -> dict:
         """Scan memory configuration for persistence risks."""
-        mem_files = list(self.agent_dir.glob("**/memory*.yaml")) + list(self.agent_dir.glob("**/memory*.json"))
+        mem_files = self._safe_glob("**/memory*.yaml") + self._safe_glob("**/memory*.json")
         if not mem_files:
             return {"status": "passed", "blocked": False, "critical": 0, "message": "No memory config found"}
 
@@ -218,7 +240,7 @@ class AgentSurfaceScanner:
 
     def _scan_permission(self) -> dict:
         """Scan permission declarations for principle of least privilege."""
-        perm_files = list(self.agent_dir.glob("**/permissions*.yaml")) + list(self.agent_dir.glob("**/policy*.yaml"))
+        perm_files = self._safe_glob("**/permissions*.yaml") + self._safe_glob("**/policy*.yaml")
         if not perm_files:
             return {"status": "passed", "blocked": False, "critical": 0, "message": "No permission policy found"}
 

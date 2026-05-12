@@ -67,11 +67,21 @@ class ComplianceReporter:
         dim = control.get("dimension", "skill")
         dim_result = results.get("dimensions", {}).get(dim, {})
 
-        if dim_result.get("blocked"):
+        # Determine coverage: did the scanner actually run for this dimension?
+        dim_status = dim_result.get("status", "not_scanned")
+        dim_checks = dim_result.get("checks", 0)
+
+        if dim_status == "not_scanned" or dim_checks == 0:
+            coverage = "not_covered"
+            status = "no_evidence"
+        elif dim_result.get("blocked"):
+            coverage = "covered"
             status = "non_compliant"
         elif dim_result.get("warnings", 0) > 0:
+            coverage = "covered"
             status = "needs_review"
         else:
+            coverage = "covered"
             status = "compliant"
 
         return {
@@ -79,7 +89,8 @@ class ComplianceReporter:
             "control_name": control["name"],
             "dimension": dim,
             "status": status,
-            "evidence": f"Dimension '{dim}' scan: {dim_result.get('status', 'unknown')}",
+            "coverage_status": coverage,
+            "evidence": f"Dimension '{dim}' scan: {dim_status} ({dim_checks} checks)",
         }
 
 
@@ -156,8 +167,10 @@ class RBACManager:
     """Simplified RBAC for enterprise deployments."""
 
     ROLES = {
-        "admin": ["scan", "policy_write", "user_manage", "report_view", "registry_manage"],
-        "security_lead": ["scan", "policy_write", "report_view", "registry_view"],
+        "admin": ["scan", "policy_write", "user_manage", "report_view", "registry_manage",
+                  "baseline_approve", "exception_approve", "notification_configure"],
+        "security_lead": ["scan", "policy_write", "report_view", "registry_view",
+                         "baseline_approve", "exception_approve"],
         "developer": ["scan", "report_view"],
         "viewer": ["report_view"],
     }
@@ -184,4 +197,6 @@ class RBACManager:
 
     def can(self, user_id: str, action: str) -> bool:
         role = self.config["users"].get(user_id, "viewer")
-        return action in self.ROLES.get(role, [])
+        # Use config roles for custom role support, fall back to built-in ROLES
+        roles = self.config.get("roles", self.ROLES)
+        return action in roles.get(role, [])
