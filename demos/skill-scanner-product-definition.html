@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Skill Scanner — 产品定义书</title>
+<style>
+:root{
+  --bg:#090d14; --panel:#111827; --panel2:#161f30;
+  --text:#e2e8f0; --muted:#8899aa; --line:rgba(148,200,255,.1);
+  --pass:#4ade80; --fail:#ef4444; --warn:#fbbf24; --accent:#4dd0e1; --blue:#60a5fa; --purple:#a78bfa;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',-apple-system,sans-serif;
+  background:radial-gradient(ellipse at 20% 10%,rgba(77,208,225,.03) 0%,transparent 40%),radial-gradient(ellipse at 80% 50%,rgba(167,139,250,.03) 0%,transparent 40%),var(--bg);
+  color:var(--text);font-size:14px;line-height:1.7;padding:0;
+}
+
+/* Nav sidebar */
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:220px;z-index:10;
+  background:rgba(0,0,0,.4);border-right:1px solid var(--line);
+  padding:20px 0;overflow-y:auto;
+}
+.sidebar .logo{padding:0 18px 16px;font-size:15px;font-weight:700;border-bottom:1px solid var(--line);margin-bottom:10px}
+.sidebar .logo span{color:var(--accent)}
+.sidebar a{
+  display:block;padding:8px 18px;font-size:12px;color:var(--muted);text-decoration:none;transition:all .1s;border-left:2px solid transparent;
+}
+.sidebar a:hover{color:var(--text);background:var(--glass);border-left-color:var(--accent)}
+.sidebar a.active{color:var(--accent);border-left-color:var(--accent);background:rgba(77,208,225,.05)}
+.sidebar a.sub{padding-left:30px;font-size:11px}
+.content{margin-left:220px;padding:0;max-width:900px}
+section{padding:50px 50px 40px;border-bottom:1px solid var(--line)}
+section:last-child{border-bottom:none}
+h2{font-size:22px;font-weight:700;margin-bottom:16px;letter-spacing:-.3px}
+h2 .num{color:var(--accent);margin-right:8px}
+h3{font-size:16px;font-weight:600;margin:24px 0 10px}
+h4{font-size:13px;font-weight:600;margin:16px 0 6px;color:var(--accent)}
+p{font-size:13px;color:var(--muted);margin-bottom:10px;line-height:1.8}
+p strong{color:var(--text)}
+code{font-family:'JetBrains Mono',monospace;font-size:11px;background:rgba(255,255,255,.04);padding:1px 5px;border-radius:3px;color:var(--accent)}
+pre{
+  background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+  padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:11px;
+  line-height:1.7;overflow-x:auto;margin:10px 0;color:var(--text);
+}
+pre .c{color:rgba(255,255,255,.3);font-style:italic}
+pre .k{color:var(--accent)}
+pre .s{color:var(--pass)}
+pre .e{color:var(--fail)}
+pre .w{color:var(--warn)}
+pre .v{color:var(--blue)}
+.table-wrap{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;background:var(--panel2)}
+tr:hover{background:var(--glass)}
+td:first-child{font-weight:500;color:var(--text)}
+td .tag{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600}
+.tag.y{background:rgba(74,222,128,.12);color:var(--pass)}
+.tag.n{background:rgba(239,68,68,.1);color:var(--fail)}
+.tag.w{background:rgba(251,191,36,.1);color:var(--warn)}
+.tag.u{background:rgba(167,139,250,.12);color:var(--purple)}
+
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px;transition:all .2s;
+}
+.card:hover{border-color:rgba(148,200,255,.15)}
+.card h4{color:var(--text);font-size:13px;margin:0 0 6px}
+.card p{font-size:11px;color:var(--muted);margin:0;line-height:1.6}
+
+.arch-box{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:16px 18px;margin:10px 0;
+}
+.arch-box h4{color:var(--text);font-size:13px;margin:0 0 8px}
+.arch-item{padding:5px 0;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line)}
+.arch-item:last-child{border-bottom:none}
+.arch-item .name{font-weight:600;color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:11px}
+.arch-item .desc{color:var(--muted);font-size:11px;margin-left:4px}
+.arch-item .arrow{color:rgba(255,255,255,.15);margin:0 4px}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:768px){.sidebar{display:none}.content{margin-left:0}.two-col,.card-grid{grid-template-columns:1fr}}
+
+.callout{
+  padding:12px 16px;border-radius:8px;font-size:12px;line-height:1.6;margin:14px 0;
+  border-left:3px solid;
+}
+.callout.blue{background:rgba(77,208,225,.06);border-color:var(--accent);color:var(--muted)}
+.callout.blue strong{color:var(--accent)}
+.callout.green{background:rgba(74,222,128,.06);border-color:var(--pass);color:var(--muted)}
+.callout.green strong{color:var(--pass)}
+.callout.red{background:rgba(239,68,68,.06);border-color:var(--fail);color:var(--muted)}
+.callout.red strong{color:var(--fail)}
+
+.hero{
+  padding:60px 50px 40px;border-bottom:1px solid var(--line);
+  background:radial-gradient(ellipse at 60% 30%,rgba(77,208,225,.06) 0%,transparent 50%);
+}
+.hero h1{font-size:30px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px}
+.hero h1 span{color:var(--accent)}
+.hero .sub{font-size:14px;color:var(--muted);margin-bottom:16px}
+.hero .tags{display:flex;gap:8px;flex-wrap:wrap}
+.hero .tags .t{padding:4px 10px;border-radius:6px;font-size:10px;font-weight:600}
+.hero .tags .t.s{background:rgba(239,68,68,.1);color:var(--fail);border:1px solid rgba(239,68,68,.2)}
+.hero .tags .t.c{background:rgba(74,222,128,.1);color:var(--pass);border:1px solid rgba(74,222,128,.2)}
+.hero .tags .t.m{background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.2)}
+
+ul,ol{font-size:13px;color:var(--muted);line-height:1.8;padding-left:20px;margin:8px 0}
+li{margin-bottom:3px}
+li strong{color:var(--text)}
+
+blockquote{
+  border-left:2px solid var(--line);padding:8px 14px;margin:12px 0;
+  font-size:13px;color:var(--muted);font-style:italic;
+  background:var(--panel);border-radius:0 6px 6px 0;
+}
+blockquote strong{color:var(--text);font-style:normal}
+@media(max-width:1024px){
+  .content{max-width:100%}
+  section{padding:40px 30px}
+  .hero{padding:40px 30px}
+}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .content{margin-left:0}
+  .hero{padding:30px 20px}
+  .hero h1{font-size:24px}
+  .hero .sub{font-size:12px}
+  section{padding:30px 20px}
+  h2{font-size:18px}
+  h3{font-size:14px}
+  p,li,blockquote{font-size:12px}
+  .two-col,.card-grid{grid-template-columns:1fr}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{font-size:11px}
+  th,td{padding:6px 8px}
+  pre{font-size:10px;padding:10px 12px}
+  .arch-box{padding:12px 14px}
+  .arch-item{font-size:11px}
+  .callout{font-size:11px;padding:10px 12px}
+}
+@media(max-width:480px){
+  .hero{padding:20px 14px}
+  .hero h1{font-size:20px}
+  .hero .tags .t{font-size:9px;padding:3px 8px}
+  section{padding:20px 14px}
+  h2{font-size:16px}
+  h2 .num{font-size:16px}
+  pre{font-size:9px;padding:8px 10px}
+  table{font-size:10px}
+  th,td{padding:4px 6px}
+  .card{padding:10px 12px}
+  .card h4{font-size:12px}
+  .card p{font-size:10px}
+  code{font-size:10px}
+}
+</style>
+</head>
+<body>
+
+<nav class="sidebar" id="sidebar">
+  <div class="logo">Surface Diff <span>Docs</span></div>
+  <a href="#first-principles">一、第一性原理</a>
+  <a href="#why-now" class="sub">时间窗口</a>
+  <a href="#features" class="sub">功能列表</a>
+  <a href="#roadmap" class="sub">产品路线图</a>
+  <a href="#architecture">二、技术架构</a>
+  <a href="#loaders" class="sub">Loader</a>
+  <a href="#analyzers" class="sub">Analyzers</a>
+  <a href="#engine" class="sub">Engine</a>
+  <a href="#output" class="sub">Output</a>
+  <a href="#usage">三、操作指导</a>
+  <a href="#cli" class="sub">CLI 命令</a>
+  <a href="#github-action" class="sub">GitHub Action</a>
+  <a href="#policy" class="sub">策略语法</a>
+  <a href="#demo-walkthrough" class="sub">Demo 流程</a>
+  <a href="#competitive">四、竞争定位</a>
+</nav>
+
+<div class="content">
+
+<div class="hero">
+  <h1>Agent <span>Skill Scanner</span></h1>
+  <div class="sub">Skill Surface Diff — 在 Agent Skill 进入生产前，发现并阻断能力边界扩张</div>
+  <div class="tags">
+    <span class="t s">🔴 Prompt Injection</span>
+    <span class="t s">🔴 Data Exfiltration</span>
+    <span class="t m">🟣 Permission Overreach</span>
+    <span class="t m">🟣 Supply Chain</span>
+    <span class="t c">🟢 CI/CD Gate</span>
+  </div>
+</div>
+
+<!-- ====== 一、第一性原理 ====== -->
+<section id="first-principles">
+  <h2><span class="num">01</span>第一性原理：为什么要做这个工具</h2>
+
+  <p><strong>Agent 不再是代码。Agent 是可安装的能力包。</strong></p>
+
+  <p>传统软件的供应链安全路径很清晰：<br><code>npm install → 依赖扫描 → 阻断恶意包</code></p>
+
+  <p>Agent Skills 的供应链安全路径应该是：<br><code>agent-skills install → scan → 阻断恶意 skill</code></p>
+
+  <p>但 Skill 的危险面比 npm package 广得多：</p>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>维度</th><th>npm package</th><th>Agent Skill</th></tr>
+    <tr><td>攻击向量</td><td>恶意代码</td><td>指令注入 + 数据外传 + 权限越界</td></tr>
+    <tr><td>危险范围</td><td>你的服务器</td><td><strong>你的 Agent 能接触的一切</strong></td></tr>
+    <tr><td>检测难度</td><td>AST 静态分析</td><td>需理解 agent 上下文 + 工具意图</td></tr>
+    <tr><td>审计对象</td><td>代码 + 依赖</td><td>指令 + shell + schema + RAG + 权限 + memory</td></tr>
+  </table>
+  </div>
+
+  <h3>推导链</h3>
+  <ol>
+    <li><strong>Agent = Model + Prompt + Tools + Skills + Memory + RAG + Policy</strong></li>
+    <li><strong>Skill = 可安装的 versioned 能力包</strong>（instructions + scripts + resources + tool definitions）</li>
+    <li>凡是「可安装、可版本化、可传播」的，必然出现<strong>供应链安全问题</strong></li>
+    <li>Skill 特有的风险：<strong>表面文档无害，但指令注入操控 agent、脚本外传数据、权限声明与实际不一致</strong></li>
+    <li>现有工具（Promptfoo/LangSmith/Langfuse）聚焦 eval 和 observability，<strong>没人做 skill 发布前的安全扫描</strong></li>
+    <li><strong>产品定位：Agent Skills 的 Snyk</strong></li>
+  </ol>
+
+  <div class="callout blue">
+    <strong>核心认知：</strong>一个 SKILL.md 可以包含 <code>system_prompt_append</code> 覆写安全指令，一个 init.sh 可以 <code>curl</code> 外传 secrets，一个 tool schema 可以声明只读但实际调用退款接口。这些在 <strong>npm security audit</strong> 层面是代码级别的，但在 <strong>Agent 安全</strong>层面是行为级别的——Agent 不是"执行代码"，Agent 是"按指令行动"。
+  </div>
+</section>
+
+<!-- ====== 时间窗口 ====== -->
+<section id="why-now">
+  <h3>时间窗口为什么刚好</h3>
+
+  <p>三个趋势同时汇聚：</p>
+
+  <ul>
+    <li><strong>OpenAI 在推 Skills</strong> — skill 定义为带 SKILL.md manifest 的 versioned bundle，可用于 codify processes</li>
+    <li><strong>Anthropic 在推 Agent Skills</strong> — 描述为由 instructions, scripts, resources 组成的 folders，agent 可动态加载</li>
+    <li><strong>MCP 协议标准化</strong> — 工具调用规范 + 权限声明越来越结构化</li>
+  </ul>
+
+  <p>这些趋势的<strong>共同推论</strong>：很快会有 Skill Registry（类似 npm/GitHub Marketplace）。有 registry 就有恶意包。有恶意包就需要安全扫描。现在没人做。</p>
+
+  <div class="card-grid">
+    <div class="card"><h4>🔴 没有安全扫描</h4><p>OpenAI 文档明确警告：使用 Skills 前需要检查，Skills 会引入 prompt-injection-driven data exfiltration 等安全风险。但 <strong>没有提供工具做这个检查</strong>。</p></div>
+    <div class="card"><h4>🟡 危险面独特</h4><p>Agent Skill 的威胁模型不同于 Docker image / npm package。攻击者操控的是 <strong>Agent 的行为和判断</strong>，而不是直接执行代码。</p></div>
+    <div class="card"><h4>🟢 现有工具不覆盖</h4><p>Promptfoo 能做 eval + security scan，但只针对 prompt 级别的注入，不能扫描 skill 目录的脚本、指令、权限、资源文件。</p></div>
+    <div class="card"><h4>✅ 工程团队会买单</h4><p>已经踩过 Agent 事故（越权操作、成本爆炸、合规违规）的团队，天然理解这个产品的价值。</p></div>
+  </div>
+</section>
+
+<!-- ====== 功能 ====== -->
+<section id="features">
+  <h3>功能一览（5 个扫描器，13+ 检查项）</h3>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>扫描器</th><th>检测内容</th><th>实现方式</th><th>严重度</th></tr>
+    <tr><td><strong>Manifest Scanner</strong></td><td>prompt_injection、hidden directives、system_prompt_append、ignore_safety</td><td>YAML parse + 模式匹配 + 语义分析</td><td><span class="tag n">CRIT</span></td></tr>
+    <tr><td><strong>Script Scanner</strong></td><td>curl/wget 数据外传、eval()、exec、rm -rf、base64 payload</td><td>AST 分析 + 危险函数白名单</td><td><span class="tag n">CRIT</span></td></tr>
+    <tr><td><strong>Instruction Scanner</strong></td><td>"never mention"、"always say"、"pretend" 等操控性引导</td><td>关键词聚类 + 上下文分析</td><td><span class="tag w">WARN</span></td></tr>
+    <tr><td><strong>Permission Scanner</strong></td><td>声明权限 vs 实际工具调用范围、最小权限原则</td><td>schema 对账 + diff 分析</td><td><span class="tag w">WARN</span></td></tr>
+    <tr><td><strong>Dependency Scanner</strong></td><td>已知 CVE、版本一致性、资源目录安全检查</td><td>vuln DB 查询 + 文件审计</td><td><span class="tag y">PASS</span></td></tr>
+  </table>
+  </div>
+
+  <p>附加检查：网络访问合理性审计、加密混淆检测、版本差异对比、manifest 签名验证。</p>
+</section>
+
+<!-- ====== 路线图 ====== -->
+<section id="roadmap">
+  <h3>产品扩展路径</h3>
+
+  <div class="card-grid">
+    <div class="card">
+      <h4>MVP — CLI + GitHub Action</h4>
+      <p><code>agent-skills scan</code> 本地扫描 · CI 模式输出 SARIF/JUnit · 版本对比扫描 · 策略初始化</p>
+    </div>
+    <div class="card">
+      <h4>V2 — Policy Engine + Trace Replay</h4>
+      <p>Rego 策略引擎 · 基线轨迹回放 · 工具调用契约测试 · 生产 alert → regression test</p>
+    </div>
+    <div class="card">
+      <h4>V3 — Registry Scanner</h4>
+      <p>公共 skill registry 自动扫描 · 恶意 skill 数据库 · 社区签名机制 · npm-style audit</p>
+    </div>
+    <div class="card">
+      <h4>V4 — Agent Release Gate</h4>
+      <p>每次 agent/skill/tool/prompt/model/RAG/memory/permission 变更前的完整安全门</p>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 二、技术架构 ====== -->
+<section id="architecture">
+  <h2><span class="num">02</span>技术架构</h2>
+
+  <div id="loaders" class="arch-box">
+    <h4>1. Loader — 解析 Skill 目录结构</h4>
+    <div class="arch-item"><span class="name">manifest_loader</span> <span class="arrow">→</span> <span class="desc">YAML/JSON SKILL.md</span></div>
+    <div class="arch-item"><span class="name">script_loader</span> <span class="arrow">→</span> <span class="desc">shell / Python scripts</span></div>
+    <div class="arch-item"><span class="name">instruction_loader</span> <span class="arrow">→</span> <span class="desc">Markdown / RST 指令文件</span></div>
+    <div class="arch-item"><span class="name">tool_loader</span> <span class="arrow">→</span> <span class="desc">OpenAPI / JSON 工具 schema</span></div>
+  </div>
+
+  <div id="analyzers" class="arch-box">
+    <h4>2. Analyzers — 13+ 独立检查</h4>
+    <div class="arch-item"><span class="name">prompt_injection_check</span> <span class="arrow">→</span> <span class="desc">system_prompt_append, override, ignore_safety</span></div>
+    <div class="arch-item"><span class="name">data_exfil_check</span> <span class="arrow">→</span> <span class="desc">curl/wget 到未知主机, base64 编码, file→network</span></div>
+    <div class="arch-item"><span class="name">dangerous_script_check</span> <span class="arrow">→</span> <span class="desc">rm -rf, eval, exec, sudo, chmod 777</span></div>
+    <div class="arch-item"><span class="name">permission_overreach_check</span> <span class="arrow">→</span> <span class="desc">声明权限 vs 实际工具调用范围</span></div>
+    <div class="arch-item"><span class="name">network_justification_check</span> <span class="arrow">→</span> <span class="desc">network=true 但在 manifest 中无说明</span></div>
+    <div class="arch-item"><span class="name">instruction_bias_check</span> <span class="arrow">→</span> <span class="desc">"never mention" "always say" "pretend"</span></div>
+    <div class="arch-item"><span class="name">cve_check</span> <span class="arrow">→</span> <span class="desc">依赖版本 vs 已知漏洞库</span></div>
+    <div class="arch-item"><span class="name">resource_check</span> <span class="arrow">→</span> <span class="desc">资源目录不可执行</span></div>
+    <div class="arch-item"><span class="name">schema_check</span> <span class="arrow">→</span> <span class="desc">工具 schema 有效性</span></div>
+    <div class="arch-item"><span class="name">registry_check</span> <span class="arrow">→</span> <span class="desc">版本 vs registry 一致性</span></div>
+    <div class="arch-item"><span class="name">encode_check</span> <span class="arrow">→</span> <span class="desc">base64/hex 混淆检测</span></div>
+    <div class="arch-item"><span class="name">diff_check</span> <span class="arrow">→</span> <span class="desc">版本对比：新增了什么权限/指令</span></div>
+    <div class="arch-item"><span class="name">signature_check</span> <span class="arrow">→</span> <span class="desc">manifest 数字签名验证</span></div>
+  </div>
+
+  <div id="engine" class="arch-box">
+    <h4>3. Engine — 策略引擎 + 评分</h4>
+    <div class="arch-item"><span class="name">policy_rego</span> <span class="arrow">→</span> <span class="desc">Rego rules (OPA 兼容策略语言)</span></div>
+    <div class="arch-item"><span class="name">scorer</span> <span class="arrow">→</span> <span class="desc">加权风险评分：critical=40, warning=15, info=2</span></div>
+    <div class="arch-item"><span class="name">blocker</span> <span class="arrow">→</span> <span class="desc">阻断逻辑 + 可解释原因</span></div>
+  </div>
+
+  <div id="output" class="arch-box">
+    <h4>4. Output — 多种输出格式</h4>
+    <div class="arch-item"><span class="name">terminal</span> <span class="arrow">→</span> <span class="desc">彩色 CLI 输出</span></div>
+    <div class="arch-item"><span class="name">sarif</span> <span class="arrow">→</span> <span class="desc">GitHub Code Scanning 集成</span></div>
+    <div class="arch-item"><span class="name">junit</span> <span class="arrow">→</span> <span class="desc">CI pipeline 集成</span></div>
+    <div class="arch-item"><span class="name">json</span> <span class="arrow">→</span> <span class="desc">机器可读</span></div>
+    <div class="arch-item"><span class="name">markdown</span> <span class="arrow">→</span> <span class="desc">PR comment 模板</span></div>
+  </div>
+
+  <h3>核心原语：Skill Surface Diff</h3>
+
+  <p>这个产品的核心不是扫描本身，而是 <strong>Skill Surface Diff</strong>——Agent 能力边界的变化对比。</p>
+
+  <div class="callout blue">
+    <strong>Skill Surface =</strong> manifest fields + declared permissions + tool schemas + scripts + network endpoints + file access + instruction files + hidden prompt modifiers + version delta<br><br>
+    <strong>Scanner 的任务：</strong><br>
+    <code>current_surface = scan(skill@v1.8.2)</code><br>
+    <code>baseline_surface = scan(skill@v1.8.1)</code><br><br>
+    <code>diff = current_surface - baseline_surface</code><br><br>
+    if diff adds: prompt_override / data_exfiltration_path / new_network_egress / new_high-risk_tool / new_sensitive_file_access → <strong>then block merge</strong>
+  </div>
+
+  <p>这个 framing 比
+</section>
+
+<!-- ====== 三、操作指导 ====== -->
+<section id="usage">
+  <h2><span class="num">03</span>操作指导</h2>
+
+  <div id="cli" class="arch-box">
+    <h4>CLI 命令（概念设计）</h4>
+    <pre><span class="c"># 扫描一个 skill 目录</span>
+$ agent-skills scan ./skills/financial-tx-skill/
+
+<span class="c"># 带策略扫描</span>
+$ agent-skills scan ./skills/financial-tx-skill/ --policy security.strict
+
+<span class="c"># CI 模式：输出 SARIF 供 GitHub Code Scanning</span>
+$ agent-skills scan ./skills/ --format sarif --output results.sarif
+
+<span class="c"># 版本对比扫描</span>
+$ agent-skills scan ./skills/financial-tx-skill/ --diff
+
+<span class="c"># 初始化安全策略</span>
+$ agent-skills policy init --template security.moderate
+
+<span class="c"># 验证自定义策略</span>
+$ agent-skills policy validate --file .agent-skills/policy.yaml</pre>
+  </div>
+
+  <div id="github-action" class="arch-box">
+    <h4>GitHub Action（概念设计）</h4>
+    <pre><span class="c"># .github/workflows/agent-skill-scan.yml</span>
+<span class="k">name:</span> Agent Skill Scan
+<span class="k">on:</span>
+  <span class="k">pull_request:</span>
+    <span class="k">paths:</span>
+      - <span class="s">'skills/**'</span>
+      - <span class="s">'**/SKILL.md'</span>
+
+<span class="k">jobs:</span>
+  <span class="k">scan:</span>
+    <span class="k">runs-on:</span> ubuntu-latest
+    <span class="k">steps:</span>
+      - <span class="k">uses:</span> actions/checkout@v4
+      - <span class="k">uses:</span> agent-skills/scan-action@v1
+        <span class="k">with:</span>
+          <span class="k">path:</span> <span class="s">'./skills/'</span>
+          <span class="k">policy:</span> <span class="s">'security.moderate'</span>
+          <span class="k">fail-on:</span> <span class="s">'critical'</span>
+      - <span class="k">uses:</span> agent-skills/pr-comment@v1
+        <span class="k">if:</span> failure()
+        <span class="k">with:</span>
+          <span class="k">report:</span> <span class="s">'scan-results.sarif'</span></pre>
+  </div>
+
+  <div id="policy" class="arch-box">
+    <h4>CI 阻断策略</h4>
+    <pre><span class="c"># .agent-skills/policy.yaml</span>
+<span class="k">policy:</span>
+  <span class="k">level:</span> moderate
+  <span class="k">rules:</span>
+    - <span class="k">id:</span> prompt_injection
+      <span class="k">severity:</span> critical
+      <span class="k">action:</span> block
+    - <span class="k">id:</span> data_exfiltration
+      <span class="k">severity:</span> critical
+      <span class="k">action:</span> block
+    - <span class="k">id:</span> permission_overreach
+      <span class="k">severity:</span> warning
+      <span class="k">action:</span> comment
+    - <span class="k">id:</span> unknown_network_access
+      <span class="k">severity:</span> warning
+      <span class="k">action:</span> comment
+  <span class="k">thresholds:</span>
+    <span class="k">max_critical:</span> 0
+    <span class="k">max_warnings:</span> 3
+    <span class="k">risk_score_max:</span> 50</pre>
+  </div>
+
+  <div id="demo-walkthrough" class="arch-box">
+    <h4>演示流程（共 6 步）</h4>
+    <ol>
+      <li><strong>打开</strong> <code>demo/agent-skills-scanner-demo.html</code> — 看到左栏目录树，红色原点表示有发现，绿色表示安全</li>
+      <li><strong>点击 Run Scan</strong> — 扫描动画，结果逐条显现</li>
+      <li><strong>阅读 Findings 面板</strong> — 按严重程度分组：Critical → Warning → Passed</li>
+      <li><strong>展开每条 finding</strong> — 查看代码示例和高亮的问题行</li>
+      <li><strong>切换到 Version Diff 面板</strong> — 红色为新增恶意内容，清晰展示版本变更</li>
+      <li><strong>切换到 Full Report</strong> — 完整文本报告，可导出 SARIF/JSON</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ====== 四、竞争定位 ====== -->
+<section id="competitive">
+  <h2><span class="num">04</span>竞争定位</h2>
+
+  <p><strong>不做 eval 的竞争，做「发布前安全门」。</strong></p>
+
+  <div class="table-wrap">
+  <table>
+    <tr><th>能力</th><th>Promptfoo</th><th>LangSmith</th><th>Langfuse</th><th><strong>Skill Scanner</strong></th></tr>
+    <tr><td>LLM eval</td><td><span class="tag y">✅</span></td><td><span class="tag y">✅</span></td><td><span class="tag y">✅</span></td><td><span class="tag n">—</span></td></tr>
+    <tr><td>Trace / Observability</td><td><span class="tag n">—</span></td><td><span class="tag y">✅</span></td><td><span class="tag y">✅</span></td><td><span class="tag n">—</span></td></tr>
+    <tr><td>CI/CD 集成</td><td><span class="tag y">✅</span></td><td><span class="tag y">✅</span></td><td><span class="tag n">—</span></td><td><span class="tag y">✅</span></td></tr>
+    <tr><td><strong>Skill 供应链扫描</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅ 唯一</span></td></tr>
+    <tr><td><strong>工具权限审计</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅</span></td></tr>
+    <tr><td><strong>指令注入检测</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅</span></td></tr>
+    <tr><td><strong>版本安全差异</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅</span></td></tr>
+    <tr><td><strong>Registry 扫描</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">未来</span></td></tr>
+  </table>
+  </div>
+
+  <h3>一句话差异</h3>
+  <blockquote><strong>Promptfoo</strong> — "你的 LLM output 安全吗"<br><strong>LangSmith</strong> — "你的 Agent trace 怎么看"<br><strong>Skill Scanner</strong> — <strong>"你装的这个 Skill 会不会把你卖了"</strong></blockquote>
+
+  <h3>为什么是现在</h3>
+  <p>OpenAI 正在推 Skills（带 SKILL.md manifest 的 versioned bundle），Anthropic 也在推 Agent Skills。Skill Registry（类似 npm）的雏形即将出现。有 registry 就有恶意包。有恶意包就需要安全扫描。现在没有任何人在做 Skill 级别的供应链安全扫描。</p>
+
+  <div class="callout red">
+    <strong>OpenAI 文档原话：</strong>"Skills can introduce prompt-injection-driven data exfiltration and other security risks. Use Skills with care and review their contents before use."<br><br>
+    <strong>翻译：</strong>"用 Skill 要小心，先检查内容。"<br><br>
+    <strong>问题：</strong>没有任何工具帮你检查。这就是 Skill Scanner 存在的理由。
+  </div>
+
+  <div class="callout blue">
+    <strong>⚠ 竞争更新：</strong>Snyk 已于 2026 年发布 <a href="https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/" style="color:var(--accent)">ToxicSkills</a> 研究，其 mcp-scan 支持 Agent Skills 安全检测（恶意 SKILL.md pattern、prompt injection、credential exposure 等）。<br><br>
+    <strong>这意味着：</strong>"没人做"已不是充分差异点。真正的差异化不是 "我能扫恶意 skill"，而是 <strong>Skill Surface Diff + version-to-version capability expansion + policy-as-code release gate + tool permission contract</strong>。<br><br>
+    <strong>一句话：</strong>Snyk scans whether a skill is toxic.<br>
+    <strong>You prove whether this skill version expanded the agent's authority beyond policy.</strong>
+  </div>
+</section>
+
+</div>
+
+<script>
+// Highlight active sidebar link on scroll
+const sections=document.querySelectorAll('section[id], section h3');
+const links=document.querySelectorAll('.sidebar a');
+
+window.addEventListener('scroll',()=>{
+  let current='';
+  sections.forEach(s=>{
+    const top=s.getBoundingClientRect().top;
+    if(top<200) current=s.closest('section')?.id||s.id;
+  });
+  links.forEach(l=>{
+    l.classList.toggle('active',l.getAttribute('href')==='#'+current);
+  });
+});
+</script>
+</body>
+</html>
