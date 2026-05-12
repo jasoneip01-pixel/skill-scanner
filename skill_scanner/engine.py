@@ -92,6 +92,17 @@ def scan_skill(
     engine = PolicyEngine()
     verdict = engine.evaluate(all_findings, policy_name)
 
+    # Generate finding for OPA errors
+    if verdict.get("engine") == "opa_fallback":
+        opa_error = verdict.get("opa_error", "OPA evaluation failed")
+        all_findings.append({
+            "id": "OP001", "severity": "critical", "action": "block",
+            "title": "OPA policy engine evaluation failed",
+            "file": "policy/",
+            "desc": opa_error,
+            "rule": "opa.evaluation_failed",
+        })
+
     blocked = verdict.get("verdict") is False  # False = blocked
     blocked_rules = verdict.get("blocked_rules", [])
 

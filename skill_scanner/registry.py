@@ -76,36 +76,67 @@ class RegistryScanner:
         except Exception:
             return []
 
+    @staticmethod
+    def _is_private_ip(hostname: str) -> bool:
+        """Check if a hostname resolves to a private/reserved IP range."""
+        import socket
+        import ipaddress
+        try:
+            ip_str = socket.gethostbyname(hostname)
+            addr = ipaddress.ip_address(ip_str)
+            return addr.is_private or addr.is_loopback or addr.is_link_local
+        except (socket.gaierror, ValueError):
+            return True  # unresolvable = block
+
     def scan_registry_skill(self, raw_url: str) -> Optional[dict]:
-        """Fetch and scan a skill from a raw URL."""
+        """Fetch and scan a skill from a raw URL.
+
+        Security: each redirect hop is validated against domain allowlist
+        and private IP check. Max 5 redirects, scheme must be https.
+        """
         import urllib.request
         import urllib.parse
 
-        # URL safety checks: only allow known code hosts
         parsed = urllib.parse.urlparse(raw_url)
+        if parsed.scheme != "https":
+            return None
+
         allowed_domains = {
             "raw.githubusercontent.com", "github.com",
             "githubusercontent.com", "clawhub.com",
         }
         if parsed.hostname not in allowed_domains:
             return None
-        # Block private/internal IP ranges
-        import socket
-        try:
-            ip = socket.gethostbyname(parsed.hostname)
-            private_prefixes = ("10.", "172.16.", "192.168.", "127.", "169.254.")
-            if any(ip.startswith(p) for p in private_prefixes):
-                return None
-        except socket.gaierror:
+
+        # Validate initial hop
+        if self._is_private_ip(parsed.hostname):
             return None
 
+        # Use a redirect handler that re-validates each hop
+        class ValidatingRedirectHandler(urllib.request.HTTPRedirectHandler):
+            max_redirections = 5
+
+            def redirect_request(self, req, fp, code, msg, headers, newurl):
+                new_parsed = urllib.parse.urlparse(newurl)
+                if new_parsed.scheme != "https":
+                    raise Exception(f"Redirect to non-https blocked: {newurl}")
+                if new_parsed.hostname not in allowed_domains:
+                    raise Exception(f"Redirect to disallowed domain: {new_parsed.hostname}")
+                if RegistryScanner._is_private_ip(new_parsed.hostname):
+                    raise Exception(f"Redirect to private/reserved IP: {new_parsed.hostname}")
+                return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+        opener = urllib.request.build_opener(ValidatingRedirectHandler)
+        opener.addheaders = [("User-Agent", "skill-scanner")]
+
         try:
-            req = urllib.request.Request(raw_url)
-            req.add_header("User-Agent", "skill-scanner")
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                # Limit response size
+            with opener.open(raw_url, timeout=10) as resp:
                 MAX_BYTES = 1 * 1024 * 1024  # 1MB
-                content = resp.read(MAX_BYTES).decode("utf-8", errors="replace")
+                # Read one extra byte to detect truncation
+                raw = resp.read(MAX_BYTES + 1)
+                if len(raw) > MAX_BYTES:
+                    return None  # response too large, refuse to scan partial content
+                content = raw.decode("utf-8", errors="replace")
         except Exception:
             return None
 

@@ -24,8 +24,22 @@ def scan_dependencies(base: Path) -> list[dict]:
     resources_dir = base / "resources"
     if resources_dir.exists():
         exec_extensions = {".sh", ".py", ".js", ".rb", ".exe", ".bin", ".bat", ".ps1"}
-        for item in resources_dir.rglob("*"):
-            if item.is_file() and item.suffix.lower() in exec_extensions:
+        scanned = 0
+        MAX_RESOURCE_SCAN = 500
+        # Use iterdir for single-level resources, avoid unbounded rglob recursion
+        items_to_check = [p for p in resources_dir.rglob("*") if scanned < MAX_RESOURCE_SCAN]
+        for item in items_to_check:
+            scanned += 1
+            # Skip hidden dirs, large dirs, and common noise
+            if any(part.startswith(".") for part in item.parts):
+                continue
+            if not item.is_file():
+                continue
+            try:
+                st = item.stat()
+            except OSError:
+                continue
+            if item.suffix.lower() in exec_extensions:
                 findings.append({
                     "id": "RS001", "severity": "critical", "action": "block",
                     "title": "Executable file in resources directory",
@@ -33,7 +47,7 @@ def scan_dependencies(base: Path) -> list[dict]:
                     "desc": f"Resources should not contain executable code: {item.suffix}",
                     "rule": "resource.executable",
                 })
-            elif item.is_file() and item.stat().st_mode & 0o111:
+            elif st.st_mode & 0o111:
                 findings.append({
                     "id": "RS002", "severity": "warning", "action": "warn",
                     "title": "File with execute permission in resources",
@@ -41,6 +55,14 @@ def scan_dependencies(base: Path) -> list[dict]:
                     "desc": "Resources directory file has execute bit set",
                     "rule": "resource.executable_bit",
                 })
+        if scanned >= MAX_RESOURCE_SCAN:
+            findings.append({
+                "id": "RS003", "severity": "warning", "action": "warn",
+                "title": "Resource scan truncated, too many files",
+                "file": "resources/",
+                "desc": f"Scan limited to {MAX_RESOURCE_SCAN} files, some may be missed",
+                "rule": "resource.scan_truncated",
+            })
 
     # CVE scan: information-only for now
     deps = manifest.get("dependencies", [])

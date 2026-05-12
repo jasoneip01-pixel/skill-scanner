@@ -70,7 +70,14 @@ class PolicyEngine:
                 "engine": "opa",
             }
         except (json.JSONDecodeError, KeyError, IndexError):
-            return {"verdict": True, "blocked_rules": [], "risk_score": 0, "engine": "opa_fallback"}
+            # Fallback with a finding — do NOT silently allow
+            return {
+                "verdict": False,
+                "blocked_rules": ["opa.evaluation_failed"],
+                "risk_score": 100,
+                "engine": "opa_fallback",
+                "opa_error": "OPA evaluation output could not be parsed",
+            }
 
     def _evaluate_with_builtin(self, findings: list[dict], policy_name: str) -> dict:
         """Fallback: use built-in YAML policy evaluation."""

@@ -41,12 +41,33 @@ def scan_scripts(base: Path) -> list[dict]:
     if not scripts_dir.exists():
         return findings
 
+    MAX_SCRIPT_BYTES = 1 * 1024 * 1024  # 1MB per script
     for script_file in scripts_dir.iterdir():
         if not script_file.is_file():
             continue
+        # Skip binary files
+        try:
+            if script_file.stat().st_size > MAX_SCRIPT_BYTES:
+                findings.append({
+                    "id": "SC001", "severity": "warning", "action": "warn",
+                    "title": "Script exceeds size limit, skipped",
+                    "file": f"scripts/{script_file.name}",
+                    "desc": f"File size {script_file.stat().st_size} exceeds {MAX_SCRIPT_BYTES} byte limit",
+                    "rule": "script.oversized",
+                })
+                continue
+        except OSError:
+            continue
         try:
             text = script_file.read_text()
-        except Exception:
+        except (UnicodeDecodeError, Exception):
+            findings.append({
+                "id": "SC002", "severity": "warning", "action": "warn",
+                "title": "Script is binary or unreadable, skipped",
+                "file": f"scripts/{script_file.name}",
+                "desc": "File could not be decoded as text",
+                "rule": "script.binary",
+            })
             continue
 
         rel = f"scripts/{script_file.name}"
