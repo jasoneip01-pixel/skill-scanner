@@ -320,24 +320,24 @@ blockquote strong{color:var(--text);font-style:normal}
 
 <!-- ====== 路线图 ====== -->
 <section id="roadmap">
-  <h3>产品扩展路径</h3>
+  <h3>产品扩展路径 <span style="font-size:10px;color:var(--pass);background:rgba(74,222,128,.1);padding:2px 6px;border-radius:4px;margin-left:8px">v0.3.0 — Phase 1-4 Complete</span></h3>
 
   <div class="card-grid">
     <div class="card">
-      <h4>MVP — CLI + GitHub Action</h4>
-      <p><code>agent-skills scan</code> 本地扫描 · CI 模式输出 SARIF/JUnit · 版本对比扫描 · 策略初始化</p>
+      <h4>✅ Phase 1 — CLI + GitHub Action</h4>
+      <p><code>agent-skills scan</code> · SARIF/JUnit · 3策略模板 · pip install skill-scanner · GitHub Marketplace Action</p>
     </div>
     <div class="card">
-      <h4>V2 — Policy Engine + Trace Replay</h4>
-      <p>Rego 策略引擎 · 基线轨迹回放 · 工具调用契约测试 · 生产 alert → regression test</p>
+      <h4>✅ Phase 2 — Policy Engine + Trace</h4>
+      <p>OPA/Rego 策略引擎 · Trace Recorder + Comparator · 能力漂移检测 · Slack/Teams 通知</p>
     </div>
     <div class="card">
-      <h4>V3 — Registry Scanner</h4>
-      <p>公共 skill registry 自动扫描 · 恶意 skill 数据库 · 社区签名机制 · npm-style audit</p>
+      <h4>✅ Phase 3 — Registry Scanner</h4>
+      <p>GitHub 代码搜索 · 远程 Skill 抓取+扫描 · Trust Score · 恶意 Skill 社区数据库</p>
     </div>
     <div class="card">
-      <h4>V4 — Agent Release Gate</h4>
-      <p>每次 agent/skill/tool/prompt/model/RAG/memory/permission 变更前的完整安全门</p>
+      <h4>✅ Phase 4 — Agent Release Gate</h4>
+      <p>7维全量扫描 · SOC2/GDPR/PCI-DSS 合规报告 · RBAC · Docker/Helm 自托管部署</p>
     </div>
   </div>
 </section>
@@ -387,6 +387,30 @@ blockquote strong{color:var(--text);font-style:normal}
     <div class="arch-item"><span class="name">markdown</span> <span class="arrow">→</span> <span class="desc">PR comment 模板</span></div>
   </div>
 
+  <div id="phase2-arch" class="arch-box">
+    <h4>5. Phase 2 — Policy Engine + Trace</h4>
+    <div class="arch-item"><span class="name">policy_rego</span> <span class="arrow">→</span> <span class="desc">OPA-compatible Rego policy evaluation engine</span></div>
+    <div class="arch-item"><span class="name">trace_recorder</span> <span class="arrow">→</span> <span class="desc">Record agent tool call traces as baseline</span></div>
+    <div class="arch-item"><span class="name">trace_comparator</span> <span class="arrow">→</span> <span class="desc">Detect new tools, param changes, method upgrades</span></div>
+    <div class="arch-item"><span class="name">notifications</span> <span class="arrow">→</span> <span class="desc">Slack/Teams webhook integration</span></div>
+  </div>
+
+  <div id="phase3-arch" class="arch-box">
+    <h4>6. Phase 3 — Registry Scanner</h4>
+    <div class="arch-item"><span class="name">github_discover</span> <span class="arrow">→</span> <span class="desc">Search GitHub for SKILL.md files</span></div>
+    <div class="arch-item"><span class="name">remote_fetch</span> <span class="arrow">→</span> <span class="desc">Fetch and scan skills from raw URLs</span></div>
+    <div class="arch-item"><span class="name">trust_score</span> <span class="arrow">→</span> <span class="desc">Score 0-100 based on security + community signals</span></div>
+    <div class="arch-item"><span class="name">malicious_db</span> <span class="arrow">→</span> <span class="desc">Community-reported malicious skill database</span></div>
+  </div>
+
+  <div id="phase4-arch" class="arch-box">
+    <h4>7. Phase 4 — Agent Surface + Enterprise</h4>
+    <div class="arch-item"><span class="name">agent_surface</span> <span class="arrow">→</span> <span class="desc">7-dimension scan: skill/tool/prompt/model/RAG/memory/permission</span></div>
+    <div class="arch-item"><span class="name">compliance</span> <span class="arrow">→</span> <span class="desc">SOC2/GDPR/PCI-DSS/ISO27001 audit reports</span></div>
+    <div class="arch-item"><span class="name">rbac</span> <span class="arrow">→</span> <span class="desc">Enterprise role-based access control</span></div>
+    <div class="arch-item"><span class="name">helm</span> <span class="arrow">→</span> <span class="desc">Docker + Kubernetes Helm chart deployment</span></div>
+  </div>
+
   <h3>核心原语：Skill Surface Diff</h3>
 
   <p>这个产品的核心不是扫描本身，而是 <strong>Skill Surface Diff</strong>——Agent 能力边界的变化对比。</p>
@@ -409,23 +433,28 @@ blockquote strong{color:var(--text);font-style:normal}
 
   <div id="cli" class="arch-box">
     <h4>CLI 命令（概念设计）</h4>
-    <pre><span class="c"># 扫描一个 skill 目录</span>
-$ agent-skills scan ./skills/financial-tx-skill/
+      <span class="c"># Phase 1: 基础扫描</span>
+<span class="k">$</span> <span class="cmd">agent-skills scan</span> <span class="val">./skills/my-skill/</span>
+<span class="k">$</span> <span class="cmd">agent-skills scan</span> <span class="val">./skills/my-skill/</span> <span class="flag">--policy</span> <span class="val">strict</span> <span class="flag">--format</span> <span class="val">sarif</span>
 
-<span class="c"># 带策略扫描</span>
-$ agent-skills scan ./skills/financial-tx-skill/ --policy security.strict
+      <span class="c"># Phase 2: 轨迹回放 + 漂移检测</span>
+<span class="k">$</span> <span class="cmd">agent-skills trace record</span> <span class="val">my-skill 1.0.0</span> <span class="flag">--input</span> <span class="val">trace.json</span>
+<span class="k">$</span> <span class="cmd">agent-skills trace diff</span> <span class="val">current-trace.json</span> <span class="flag">--baseline-trace</span> <span class="val">my-skill-1.0.0</span>
 
-<span class="c"># CI 模式：输出 SARIF 供 GitHub Code Scanning</span>
-$ agent-skills scan ./skills/ --format sarif --output results.sarif
+      <span class="c"># Phase 3: Registry 搜索 + 远程扫描</span>
+<span class="k">$</span> <span class="cmd">agent-skills registry discover</span> <span class="flag">--query</span> <span class="val">"financial"</span>
+<span class="k">$</span> <span class="cmd">agent-skills registry scan-url</span> <span class="val">https://raw.githubusercontent.com/...</span>
 
-<span class="c"># 版本对比扫描</span>
-$ agent-skills scan ./skills/financial-tx-skill/ --diff
+      <span class="c"># Phase 4: 全量审计 + 合规报告</span>
+<span class="k">$</span> <span class="cmd">agent-skills audit</span> <span class="val">./my-agent/</span>
+<span class="k">$</span> <span class="cmd">agent-skills compliance</span> <span class="val">./my-agent/</span> <span class="flag">--framework</span> <span class="val">soc2</span>
 
-<span class="c"># 初始化安全策略</span>
-$ agent-skills policy init --template security.moderate
+      <span class="c"># 通知集成</span>
+<span class="k">$</span> <span class="cmd">agent-skills notify</span> <span class="val">./skills/</span> <span class="flag">--slack</span> <span class="val">https://hooks.slack.com/...</span>
 
-<span class="c"># 验证自定义策略</span>
-$ agent-skills policy validate --file .agent-skills/policy.yaml</pre>
+      <span class="c"># 策略管理</span>
+<span class="k">$</span> <span class="cmd">agent-skills init</span> <span class="flag">--template</span> <span class="val">moderate</span>
+<span class="k">$</span> <span class="cmd">agent-skills policies</span></pre>
   </div>
 
   <div id="github-action" class="arch-box">
