@@ -33,7 +33,7 @@ class AgentSurfaceScanner:
             # Skip paths under ignored directories
             try:
                 rel = p.relative_to(self.agent_dir)
-                if any(part in self.IGNORE_DIRS for part in rel.parts[:-1]):
+                if any(part in self.IGNORE_DIRS for part in rel.parts):
                     continue
             except ValueError:
                 continue

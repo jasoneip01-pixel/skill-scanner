@@ -515,8 +515,11 @@ def audit(agent_dir, policy, output_format):
 @click.argument("agent_dir", type=click.Path(exists=True))
 @click.option("--framework", "-f", default="soc2",
               type=click.Choice(ComplianceReporter.FRAMEWORKS))
+@click.option("--format", "output_format",
+              type=click.Choice(["terminal", "json"]),
+              default="terminal", help="Output format")
 @click.option("--output", "-o", type=click.Path(), help="Output file")
-def compliance(agent_dir, framework, output):
+def compliance(agent_dir, framework, output_format, output):
     """Generate compliance audit report (SOC2, GDPR, PCI-DSS).
 
     AGENT_DIR: Path to the agent project directory.
@@ -530,13 +533,20 @@ def compliance(agent_dir, framework, output):
 
     report = ComplianceReporter.generate(scan_results, framework)
 
-    if output:
-        Path(output).write_text(json.dumps(report, indent=2))
-        console.print(f"[green]✓[/green] Compliance report saved: {output}")
+    if output_format == "json" or output:
+        text = json.dumps(report, indent=2, ensure_ascii=False)
+        if output:
+            Path(output).write_text(text)
+            console.print(f"[green]✓[/green] Compliance report saved: {output}")
+        else:
+            print(text)
     else:
-        print(json.dumps(report, indent=2))
+        console.print(f"\n[bold]Compliance Report: {framework.upper()}[/bold]")
+        console.print(f"Score: {report['compliance_score']}% | Verdict: {report['overall_verdict']}")
+        for sec in report["sections"]:
+            color = "green" if sec["status"] == "compliant" else "red"
+            console.print(f"  [{color}]{sec['control_id']}[/{color}] {sec['control_name']}: {sec['status']}")
 
-    console.print(f"\n[bold]Compliance Score:[/bold] {report['compliance_score']}%")
     if report["remediation_required"]:
         console.print(f"[red]{len(report['remediation_required'])} controls need remediation[/red]")
 
