@@ -231,11 +231,15 @@ main{flex:1;display:flex;overflow:hidden}
 <body>
 
 <header>
-  <div class="logo">Skill Surface <span>Diff</span></div>
-  <div class="tagline">Detect unsafe capability expansion before Agent Skills reach production</div>
-  <div class="badge ver">v0.1.0</div>
-  <div class="badge alpha">ALPHA</div>
-</header>
+  <div class="logo">Skill <span>Scanner</span></div>
+  <div class="tagline">Interactive Demo — Visualizing a real Skill Scanner scan</div>
+  <div class="badge ver">v0.3.2</div>
+  <div class="badge" style="background:rgba(74,222,128,.1);color:var(--pass);border:1px solid rgba(74,222,128,.2)">SHIPPED</div>
+  <div style="margin-left:auto;font-size:9px;color:var(--muted)">
+    <a href="https://github.com/jasoneip01-pixel/skill-scanner" style="color:var(--accent)">GitHub</a>
+    <span style="margin:0 4px">·</span>
+    <code style="font-size:9px">pip install skill-scanner</code>
+  </div>
 
 <div class="cli-bar">
   <div class="line"><span class="prompt">$</span> <span class="cmd">agent-skills scan</span> <span class="val">./skills/financial-tx-skill</span> \</div>
@@ -380,7 +384,7 @@ main{flex:1;display:flex;overflow:hidden}
   <div class="res-panel" id="rp-report">
     <div class="report-body">
 <span class="s">Scan Report: financial-tx-skill v1.8.1 → v1.8.2</span>
-Scanner v0.1.0 | Policy: security.moderate | 1.2s | 13 checks
+Scanner v0.3.2 | Policy: security.moderate | 1.2s | 13 checks
 
 <span class="c">Critical (2) — BLOCKED</span>
   PI001  SKILL.md:140

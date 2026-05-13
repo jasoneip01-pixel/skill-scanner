@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover,maximum-scale=5.0">
-<title>Agent Skill Scanner — 产品定义书</title>
+<title>Skill Scanner — Agent Skill Supply Chain Security</title>
 <style>
 :root{
   --bg:#090d14; --panel:#111827; --panel2:#161f30;
@@ -17,8 +17,6 @@ body{
   background:radial-gradient(ellipse at 20% 10%,rgba(77,208,225,.03) 0%,transparent 40%),radial-gradient(ellipse at 80% 50%,rgba(167,139,250,.03) 0%,transparent 40%),var(--bg);
   color:var(--text);font-size:14px;line-height:1.7;padding:0;
 }
-
-/* Nav sidebar */
 .sidebar{
   position:fixed;left:0;top:0;bottom:0;width:220px;z-index:10;
   background:rgba(0,0,0,.4);border-right:1px solid var(--line);
@@ -53,6 +51,7 @@ pre .s{color:var(--pass)}
 pre .e{color:var(--fail)}
 pre .w{color:var(--warn)}
 pre .v{color:var(--blue)}
+pre .m{color:var(--purple)}
 .table-wrap{overflow-x:auto;margin:12px 0}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}
@@ -64,8 +63,9 @@ td .tag{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600}
 .tag.n{background:rgba(239,68,68,.1);color:var(--fail)}
 .tag.w{background:rgba(251,191,36,.1);color:var(--warn)}
 .tag.u{background:rgba(167,139,250,.12);color:var(--purple)}
-
+.tag.g{background:rgba(96,165,250,.12);color:var(--blue)}
 .card-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+.card-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:14px 0}
 .card{
   background:var(--panel);border:1px solid var(--line);border-radius:10px;
   padding:14px 16px;transition:all .2s;
@@ -73,7 +73,7 @@ td .tag{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600}
 .card:hover{border-color:rgba(148,200,255,.15)}
 .card h4{color:var(--text);font-size:13px;margin:0 0 6px}
 .card p{font-size:11px;color:var(--muted);margin:0;line-height:1.6}
-
+.card .big{font-size:28px;font-weight:800;color:var(--accent);margin-bottom:2px}
 .arch-box{
   background:var(--panel);border:1px solid var(--line);border-radius:10px;
   padding:16px 18px;margin:10px 0;
@@ -84,10 +84,8 @@ td .tag{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600}
 .arch-item .name{font-weight:600;color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:11px}
 .arch-item .desc{color:var(--muted);font-size:11px;margin-left:4px}
 .arch-item .arrow{color:rgba(255,255,255,.15);margin:0 4px}
-
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-
-
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
 .callout{
   padding:12px 16px;border-radius:8px;font-size:12px;line-height:1.6;margin:14px 0;
   border-left:3px solid;
@@ -98,7 +96,8 @@ td .tag{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600}
 .callout.green strong{color:var(--pass)}
 .callout.red{background:rgba(239,68,68,.06);border-color:var(--fail);color:var(--muted)}
 .callout.red strong{color:var(--fail)}
-
+.callout.purple{background:rgba(167,139,250,.06);border-color:var(--purple);color:var(--muted)}
+.callout.purple strong{color:var(--purple)}
 .hero{
   padding:60px 50px 40px;border-bottom:1px solid var(--line);
   background:radial-gradient(ellipse at 60% 30%,rgba(77,208,225,.06) 0%,transparent 50%);
@@ -111,25 +110,33 @@ td .tag{padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600}
 .hero .tags .t.s{background:rgba(239,68,68,.1);color:var(--fail);border:1px solid rgba(239,68,68,.2)}
 .hero .tags .t.c{background:rgba(74,222,128,.1);color:var(--pass);border:1px solid rgba(74,222,128,.2)}
 .hero .tags .t.m{background:rgba(167,139,250,.1);color:var(--purple);border:1px solid rgba(167,139,250,.2)}
-
+.hero .badges{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 0}
+.hero .badges img{height:20px}
 ul,ol{font-size:13px;color:var(--muted);line-height:1.8;padding-left:20px;margin:8px 0}
 li{margin-bottom:3px}
 li strong{color:var(--text)}
-
 blockquote{
   border-left:2px solid var(--line);padding:8px 14px;margin:12px 0;
   font-size:13px;color:var(--muted);font-style:italic;
   background:var(--panel);border-radius:0 6px 6px 0;
 }
 blockquote strong{color:var(--text);font-style:normal}
-/* ── Responsive: tablet  ── */
+.install-box{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:16px 20px;margin:12px 0;text-align:center;
+}
+.install-box code{font-size:16px;background:rgba(77,208,225,.08);padding:6px 14px;border-radius:6px;color:var(--accent);border:1px solid rgba(77,208,225,.15)}
+.metric-row{display:flex;gap:16px;margin:14px 0;flex-wrap:wrap}
+.metric{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;flex:1;min-width:100px;text-align:center}
+.metric .val{font-size:22px;font-weight:700;color:var(--accent)}
+.metric .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.status-done{color:var(--pass);font-size:13px}
+.status-wip{color:var(--warn);font-size:13px}
 @media(max-width:1024px){
   .content{max-width:100%}
   section{padding:40px 30px}
   .hero{padding:40px 30px}
 }
-
-/* ── Responsive: tablet portrait / landscape phone  ── */
 @media(max-width:834px){
   .sidebar{width:180px;font-size:11px}
   .sidebar a{padding:6px 14px;font-size:11px}
@@ -138,9 +145,8 @@ blockquote strong{color:var(--text);font-style:normal}
   section{padding:32px 24px}
   .hero{padding:32px 24px}
   .hero h1{font-size:26px}
+  .three-col,.card-grid-3{grid-template-columns:1fr 1fr}
 }
-
-/* ── Responsive: iPad mini / small tablet  ── */
 @media(max-width:768px){
   .sidebar{display:none}
   .content{margin-left:0}
@@ -152,7 +158,7 @@ blockquote strong{color:var(--text);font-style:normal}
   h2{font-size:19px}
   h3{font-size:15px}
   p,li,blockquote{font-size:13px;line-height:1.75}
-  .two-col,.card-grid{grid-template-columns:1fr}
+  .two-col,.card-grid,.card-grid-3,.three-col{grid-template-columns:1fr}
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
   table{font-size:11px}
   th,td{padding:7px 9px}
@@ -160,10 +166,10 @@ blockquote strong{color:var(--text);font-style:normal}
   .arch-box{padding:12px 14px}
   .arch-item{font-size:11px}
   .callout{font-size:12px;padding:10px 14px}
-  .sidebar a, button, [role=button]{min-height:44px;display:flex;align-items:center}
+  .sidebar a,button{min-height:44px;display:flex;align-items:center}
+  .metric-row{gap:8px}
+  .metric{min-width:70px}
 }
-
-/* ── Responsive: iPhone 17 / Huawei Pura / Galaxy S (390-430px)  ── */
 @media(max-width:430px){
   body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
   .hero{padding:24px 16px}
@@ -188,10 +194,11 @@ blockquote strong{color:var(--text);font-style:normal}
   .arch-item{font-size:10.5px}
   .arch-item .name{font-size:10px}
   .callout{font-size:11px;padding:10px 12px}
-  .sidebar a, button, [role=button],.folder-main,.file-item{min-height:44px}
+  .sidebar a,button{min-height:44px}
+  .metric-row{gap:6px}
+  .metric{min-width:60px;padding:8px 10px}
+  .metric .val{font-size:18px}
 }
-
-/* ── Responsive: compact phones <=375px (iPhone SE, older Android)  ── */
 @media(max-width:375px){
   .hero h1{font-size:18px}
   .hero .sub{font-size:10.5px}
@@ -209,29 +216,22 @@ blockquote strong{color:var(--text);font-style:normal}
 <body>
 
 <nav class="sidebar" id="sidebar">
-  <div class="logo">Surface Diff <span>Docs</span></div>
+  <div class="logo">Skill <span>Scanner</span></div>
+  <a href="#product-status">产品状态</a>
   <a href="#first-principles">一、第一性原理</a>
-  <a href="#why-now" class="sub">时间窗口</a>
-  <a href="#features" class="sub">功能列表</a>
-  <a href="#roadmap" class="sub">产品路线图</a>
-  <a href="#architecture">二、技术架构</a>
-  <a href="#loaders" class="sub">Loader</a>
-  <a href="#analyzers" class="sub">Analyzers</a>
-  <a href="#engine" class="sub">Engine</a>
-  <a href="#output" class="sub">Output</a>
-  <a href="#usage">三、操作指导</a>
-  <a href="#cli" class="sub">CLI 命令</a>
-  <a href="#github-action" class="sub">GitHub Action</a>
-  <a href="#policy" class="sub">策略语法</a>
-  <a href="#demo-walkthrough" class="sub">Demo 流程</a>
-  <a href="#competitive">四、竞争定位</a>
+  <a href="#quickstart">快速上手</a>
+  <a href="#features">功能列表</a>
+  <a href="#architecture">技术架构</a>
+  <a href="#cli">CLI 命令</a>
+  <a href="#github-action">GitHub Action</a>
+  <a href="#competitive">竞争定位</a>
 </nav>
 
 <div class="content">
 
 <div class="hero">
   <h1>Agent <span>Skill Scanner</span></h1>
-  <div class="sub">Skill Surface Diff — 在 Agent Skill 进入生产前，发现并阻断能力边界扩张</div>
+  <div class="sub">Shipped. Open source. MIT-licensed.</div>
   <div class="tags">
     <span class="t s">🔴 Prompt Injection</span>
     <span class="t s">🔴 Data Exfiltration</span>
@@ -239,20 +239,69 @@ blockquote strong{color:var(--text);font-style:normal}
     <span class="t m">🟣 Supply Chain</span>
     <span class="t c">🟢 CI/CD Gate</span>
   </div>
+  <div class="badges">
+    <span class="tag u">v0.3.2</span>
+    <span class="tag c">156 tests</span>
+    <span class="tag g">8 CLI commands</span>
+    <span class="tag n">4 phases complete</span>
+    <span class="tag y">pip install</span>
+  </div>
 </div>
+
+<!-- ====== PRODUCT STATUS ====== -->
+<section id="product-status">
+  <h2><span class="num">⬡</span>产品状态</h2>
+
+  <div class="install-box">
+    <code>pip install skill-scanner</code>
+    <p style="margin-top:8px;font-size:11px">Python 3.10+ · Open Source (MIT) · <code>agent-skills scan ./skill</code></p>
+  </div>
+
+  <div class="metric-row">
+    <div class="metric"><div class="val">156</div><div class="label">Tests Passing</div></div>
+    <div class="metric"><div class="val">8</div><div class="label">CLI Commands</div></div>
+    <div class="metric"><div class="val">13+</div><div class="label">Check Rules</div></div>
+    <div class="metric"><div class="val">5</div><div class="label">Output Formats</div></div>
+    <div class="metric"><div class="val">4</div><div class="label">Phases Complete</div></div>
+    <div class="metric"><div class="val">25ms</div><div class="label">Typical Scan</div></div>
+  </div>
+
+  <div class="three-col">
+    <div class="card">
+      <h4>✅ Phase 1 — CLI + GitHub Action</h4>
+      <p><code>agent-skills scan</code> · SARIF/JUnit/JSON/Markdown · 3 策略模板 · GitHub Action 集成</p>
+    </div>
+    <div class="card">
+      <h4>✅ Phase 2 — Policy Engine + Trace</h4>
+      <p>OPA/Rego 策略 · Trace Recorder + Comparator · 能力漂移检测 · Slack/Teams 通知</p>
+    </div>
+    <div class="card">
+      <h4>✅ Phase 3 — Registry Scanner</h4>
+      <p>GitHub 搜索 · 远程抓取扫描 · Trust Score · SSRF 防护 (3轮审计)</p>
+    </div>
+    <div class="card">
+      <h4>✅ Phase 4 — Agent Release Gate</h4>
+      <p>7维全表面 · SOC2/GDPR/PCI 合规 · RBAC · Docker/Helm 部署</p>
+    </div>
+    <div class="card">
+      <h4>🔒 3轮安全审计</h4>
+      <p>Codex 对抗式审计覆盖路径穿越、SSRF redirect、OPA fallback，全部 P0 修复</p>
+    </div>
+    <div class="card">
+      <h4>📦 CI/CD 就绪</h4>
+      <p>test.yml (3.10/3.11/3.12) + release.yml (PyPI) + .github/workflows/ 已就绪</p>
+    </div>
+  </div>
+</section>
 
 <!-- ====== 一、第一性原理 ====== -->
 <section id="first-principles">
   <h2><span class="num">01</span>第一性原理：为什么要做这个工具</h2>
-
   <p><strong>Agent 不再是代码。Agent 是可安装的能力包。</strong></p>
+  <p>传统软件供应链安全：<code>npm install → 依赖扫描 → 阻断恶意包</code><br>
+  Agent Skill 供应链安全：<code>pip install skill-scanner → agent-skills scan → 阻断恶意 skill</code></p>
 
-  <p>传统软件的供应链安全路径很清晰：<br><code>npm install → 依赖扫描 → 阻断恶意包</code></p>
-
-  <p>Agent Skills 的供应链安全路径应该是：<br><code>agent-skills install → scan → 阻断恶意 skill</code></p>
-
-  <p>但 Skill 的危险面比 npm package 广得多：</p>
-
+  <p>Skill 的危险面比 npm package 广得多：</p>
   <div class="table-wrap">
   <table>
     <tr><th>维度</th><th>npm package</th><th>Agent Skill</th></tr>
@@ -268,310 +317,254 @@ blockquote strong{color:var(--text);font-style:normal}
     <li><strong>Agent = Model + Prompt + Tools + Skills + Memory + RAG + Policy</strong></li>
     <li><strong>Skill = 可安装的 versioned 能力包</strong>（instructions + scripts + resources + tool definitions）</li>
     <li>凡是「可安装、可版本化、可传播」的，必然出现<strong>供应链安全问题</strong></li>
-    <li>Skill 特有的风险：<strong>表面文档无害，但指令注入操控 agent、脚本外传数据、权限声明与实际不一致</strong></li>
     <li>现有工具（Promptfoo/LangSmith/Langfuse）聚焦 eval 和 observability，<strong>没人做 skill 发布前的安全扫描</strong></li>
-    <li><strong>产品定位：Agent Skills 的 Snyk</strong></li>
   </ol>
 
   <div class="callout blue">
-    <strong>核心认知：</strong>一个 SKILL.md 可以包含 <code>system_prompt_append</code> 覆写安全指令，一个 init.sh 可以 <code>curl</code> 外传 secrets，一个 tool schema 可以声明只读但实际调用退款接口。这些在 <strong>npm security audit</strong> 层面是代码级别的，但在 <strong>Agent 安全</strong>层面是行为级别的——Agent 不是"执行代码"，Agent 是"按指令行动"。
+    <strong>核心认知：</strong>一个 SKILL.md 可以包含 <code>system_prompt_append</code> 覆写安全指令，一个 init.sh 可以 <code>curl</code> 外传 secrets，一个 tool schema 可以声明只读但实际调用退款接口 —— 这些就是在生产环境跑的东西。现在有工具能检查了。
   </div>
-</section>
 
-<!-- ====== 时间窗口 ====== -->
-<section id="why-now">
-  <h3>时间窗口为什么刚好</h3>
-
-  <p>三个趋势同时汇聚：</p>
-
+  <h3>时间窗口</h3>
   <ul>
-    <li><strong>OpenAI 在推 Skills</strong> — skill 定义为带 SKILL.md manifest 的 versioned bundle，可用于 codify processes</li>
-    <li><strong>Anthropic 在推 Agent Skills</strong> — 描述为由 instructions, scripts, resources 组成的 folders，agent 可动态加载</li>
+    <li><strong>OpenAI 在推 Skills</strong> — versioned bundle with SKILL.md manifest</li>
+    <li><strong>Anthropic 在推 Agent Skills</strong> — folders with instructions, scripts, resources</li>
     <li><strong>MCP 协议标准化</strong> — 工具调用规范 + 权限声明越来越结构化</li>
   </ul>
+  <p>共识：很快会有 Skill Registry（类似 npm/GitHub Marketplace）。有 registry 就有恶意包。有恶意包就需要安全扫描。</p>
+</section>
 
-  <p>这些趋势的<strong>共同推论</strong>：很快会有 Skill Registry（类似 npm/GitHub Marketplace）。有 registry 就有恶意包。有恶意包就需要安全扫描。现在没人做。</p>
+<!-- ====== 快速上手 ====== -->
+<section id="quickstart">
+  <h2><span class="num">02</span>快速上手</h2>
 
-  <div class="card-grid">
-    <div class="card"><h4>🔴 没有安全扫描</h4><p>OpenAI 文档明确警告：使用 Skills 前需要检查，Skills 会引入 prompt-injection-driven data exfiltration 等安全风险。但 <strong>没有提供工具做这个检查</strong>。</p></div>
-    <div class="card"><h4>🟡 危险面独特</h4><p>Agent Skill 的威胁模型不同于 Docker image / npm package。攻击者操控的是 <strong>Agent 的行为和判断</strong>，而不是直接执行代码。</p></div>
-    <div class="card"><h4>🟢 现有工具不覆盖</h4><p>Promptfoo 能做 eval + security scan，但只针对 prompt 级别的注入，不能扫描 skill 目录的脚本、指令、权限、资源文件。</p></div>
-    <div class="card"><h4>✅ 工程团队会买单</h4><p>已经踩过 Agent 事故（越权操作、成本爆炸、合规违规）的团队，天然理解这个产品的价值。</p></div>
-  </div>
+  <h3>安装</h3>
+  <pre><span class="k">$</span> pip install skill-scanner</pre>
+
+  <h3>扫描一个 Skill 目录</h3>
+  <pre><span class="k">$</span> agent-skills scan <span class="v">./test-skill/</span></pre>
+
+  <p>真实输出：</p>
+  <pre style="font-size:9.5px">╭─────────────────────────────── Skill Scanner ────────────────────────────────╮
+│ <span class="e">✖ MERGE BLOCKED</span>                                                              │
+╰─────────────────────────────────── v0.3.0 ───────────────────────────────────╯
+  Skill:       demos/skill-scanner/test-skill/
+  Policy:      moderate
+  Duration:    25ms
+  Checks:      13
+<span class="e">4 critical</span> · <span class="w">8 warnings</span> · <span class="s">1 passed</span>
+
+Blocked by: data_exfiltration.high, prompt_injection.critical,
+new_payment_tool.requires_guard
+
+  ID       Severity   Title                        File
+ ──────────────────────────────────────────────────────────────────────────────
+  <span class="e">PI001</span>    <span class="e">critical</span>   Prompt injection via         SKILL.md
+                     'system_prompt_append'
+                     field
+  <span class="s">MF000</span>    <span class="s">passed</span>     Manifest parsed              SKILL.md
+  <span class="e">DX001</span>    <span class="e">critical</span>   Data exfiltration via curl   scripts/init.sh
+  <span class="w">FS001</span>    <span class="w">warning</span>    Secrets file access:         scripts/init.sh
+                     Secrets mount access
+  <span class="w">PO001</span>    <span class="w">warning</span>    Suspicious instruction:      instructions/
+                     'never mention'               process_payment.md
+  <span class="e">TOOL..</span>   <span class="e">critical</span>   High-risk tool without       SKILL.md
+                     guardrails: payment.refund</pre>
+
+  <h3>其他输出格式</h3>
+  <pre><span class="k">$</span> agent-skills scan <span class="v">./skill/</span> <span class="flag">--format</span> <span class="s">sarif</span> <span class="flag">-o</span> <span class="s">results.sarif</span>
+<span class="k">$</span> agent-skills scan <span class="v">./skill/</span> <span class="flag">--format</span> <span class="s">json</span>
+<span class="k">$</span> agent-skills scan <span class="v">./skill/</span> <span class="flag">--format</span> <span class="s">markdown</span> <span class="flag">-o</span> <span class="s">report.md</span></pre>
+
+  <h3>全表面审计 + 合规报告</h3>
+  <pre><span class="k">$</span> agent-skills audit <span class="v">./my-agent/</span>   <span class="c"># 7 维度全扫描</span>
+<span class="k">$</span> agent-skills compliance <span class="v">./my-agent/</span> <span class="flag">--framework</span> <span class="s">soc2</span></pre>
 </section>
 
 <!-- ====== 功能 ====== -->
 <section id="features">
-  <h3>功能一览（5 个扫描器，13+ 检查项）</h3>
+  <h2><span class="num">03</span>功能一览</h2>
 
+  <h3>核心扫描器（5 个，13+ 检查项）</h3>
   <div class="table-wrap">
   <table>
-    <tr><th>扫描器</th><th>检测内容</th><th>实现方式</th><th>严重度</th></tr>
-    <tr><td><strong>Manifest Scanner</strong></td><td>prompt_injection、hidden directives、system_prompt_append、ignore_safety</td><td>YAML parse + 模式匹配 + 语义分析</td><td><span class="tag n">CRIT</span></td></tr>
-    <tr><td><strong>Script Scanner</strong></td><td>curl/wget 数据外传、eval()、exec、rm -rf、base64 payload</td><td>AST 分析 + 危险函数白名单</td><td><span class="tag n">CRIT</span></td></tr>
-    <tr><td><strong>Instruction Scanner</strong></td><td>"never mention"、"always say"、"pretend" 等操控性引导</td><td>关键词聚类 + 上下文分析</td><td><span class="tag w">WARN</span></td></tr>
-    <tr><td><strong>Permission Scanner</strong></td><td>声明权限 vs 实际工具调用范围、最小权限原则</td><td>schema 对账 + diff 分析</td><td><span class="tag w">WARN</span></td></tr>
-    <tr><td><strong>Dependency Scanner</strong></td><td>已知 CVE、版本一致性、资源目录安全检查</td><td>vuln DB 查询 + 文件审计</td><td><span class="tag y">PASS</span></td></tr>
+    <tr><th>扫描器</th><th>检测内容</th><th>规则 ID</th><th>严重度</th></tr>
+    <tr><td><strong>Manifest</strong></td><td>prompt_injection、system_prompt_append、hidden directives</td><td>PI001, MF000-5</td><td><span class="tag n">CRIT</span></td></tr>
+    <tr><td><strong>Script</strong></td><td>curl/wget 外传、eval/exec、rm -rf、base64 payload</td><td>DX001, SC001-2, WS001-6</td><td><span class="tag n">CRIT</span></td></tr>
+    <tr><td><strong>Instruction</strong></td><td>"never mention"、"pretend" 操控性指令、API keys</td><td>PO001, SC001</td><td><span class="tag w">WARN</span></td></tr>
+    <tr><td><strong>Permission</strong></td><td>声明 vs 实际工具权限、network 合理性</td><td>NET001, TOOL001, TS001</td><td><span class="tag w">WARN</span></td></tr>
+    <tr><td><strong>Dependency</strong></td><td>资源目录可执行文件、CVE 匹配</td><td>RS001-3, CV000</td><td><span class="tag y">PASS</span></td></tr>
   </table>
   </div>
 
-  <p>附加检查：网络访问合理性审计、加密混淆检测、版本差异对比、manifest 签名验证。</p>
+  <h3>Enterprise 附加能力</h3>
+  <ul>
+    <li><strong>Agent Surface Audit</strong> — 7 维度全量扫描（skill/tool/prompt/model/RAG/memory/permission）</li>
+    <li><strong>Compliance</strong> — SOC2 / GDPR / PCI-DSS / ISO27001 合规报告，自动评分</li>
+    <li><strong>RBAC</strong> — 角色权限控制（admin / security_lead / developer / viewer）</li>
+    <li><strong>Registry Scanner</strong> — GitHub 搜索 + 远程 Skill 抓取 + Trust Score</li>
+    <li><strong>Trace & Diff</strong> — Trace 录制 + 版本间能力漂移检测</li>
+    <li><strong>Notifications</strong> — Slack / Teams webhook 集成</li>
+  </ul>
 </section>
 
-<!-- ====== 路线图 ====== -->
-<section id="roadmap">
-  <h3>产品扩展路径 <span style="font-size:10px;color:var(--pass);background:rgba(74,222,128,.1);padding:2px 6px;border-radius:4px;margin-left:8px">v0.3.0 — Phase 1-4 Complete</span></h3>
-
-  <div class="card-grid">
-    <div class="card">
-      <h4>✅ Phase 1 — CLI + GitHub Action</h4>
-      <p><code>agent-skills scan</code> · SARIF/JUnit · 3策略模板 · pip install skill-scanner · GitHub Marketplace Action</p>
-    </div>
-    <div class="card">
-      <h4>✅ Phase 2 — Policy Engine + Trace</h4>
-      <p>OPA/Rego 策略引擎 · Trace Recorder + Comparator · 能力漂移检测 · Slack/Teams 通知</p>
-    </div>
-    <div class="card">
-      <h4>✅ Phase 3 — Registry Scanner</h4>
-      <p>GitHub 代码搜索 · 远程 Skill 抓取+扫描 · Trust Score · 恶意 Skill 社区数据库</p>
-    </div>
-    <div class="card">
-      <h4>✅ Phase 4 — Agent Release Gate</h4>
-      <p>7维全量扫描 · SOC2/GDPR/PCI-DSS 合规报告 · RBAC · Docker/Helm 自托管部署</p>
-    </div>
-  </div>
-</section>
-
-<!-- ====== 二、技术架构 ====== -->
+<!-- ====== 技术架构 ====== -->
 <section id="architecture">
-  <h2><span class="num">02</span>技术架构</h2>
+  <h2><span class="num">04</span>技术架构</h2>
 
-  <div id="loaders" class="arch-box">
-    <h4>1. Loader — 解析 Skill 目录结构</h4>
-    <div class="arch-item"><span class="name">manifest_loader</span> <span class="arrow">→</span> <span class="desc">YAML/JSON SKILL.md</span></div>
-    <div class="arch-item"><span class="name">script_loader</span> <span class="arrow">→</span> <span class="desc">shell / Python scripts</span></div>
-    <div class="arch-item"><span class="name">instruction_loader</span> <span class="arrow">→</span> <span class="desc">Markdown / RST 指令文件</span></div>
-    <div class="arch-item"><span class="name">tool_loader</span> <span class="arrow">→</span> <span class="desc">OpenAPI / JSON 工具 schema</span></div>
-  </div>
-
-  <div id="analyzers" class="arch-box">
-    <h4>2. Analyzers — 13+ 独立检查</h4>
-    <div class="arch-item"><span class="name">prompt_injection_check</span> <span class="arrow">→</span> <span class="desc">system_prompt_append, override, ignore_safety</span></div>
-    <div class="arch-item"><span class="name">data_exfil_check</span> <span class="arrow">→</span> <span class="desc">curl/wget 到未知主机, base64 编码, file→network</span></div>
-    <div class="arch-item"><span class="name">dangerous_script_check</span> <span class="arrow">→</span> <span class="desc">rm -rf, eval, exec, sudo, chmod 777</span></div>
-    <div class="arch-item"><span class="name">permission_overreach_check</span> <span class="arrow">→</span> <span class="desc">声明权限 vs 实际工具调用范围</span></div>
-    <div class="arch-item"><span class="name">network_justification_check</span> <span class="arrow">→</span> <span class="desc">network=true 但在 manifest 中无说明</span></div>
-    <div class="arch-item"><span class="name">instruction_bias_check</span> <span class="arrow">→</span> <span class="desc">"never mention" "always say" "pretend"</span></div>
-    <div class="arch-item"><span class="name">cve_check</span> <span class="arrow">→</span> <span class="desc">依赖版本 vs 已知漏洞库</span></div>
-    <div class="arch-item"><span class="name">resource_check</span> <span class="arrow">→</span> <span class="desc">资源目录不可执行</span></div>
-    <div class="arch-item"><span class="name">schema_check</span> <span class="arrow">→</span> <span class="desc">工具 schema 有效性</span></div>
-    <div class="arch-item"><span class="name">registry_check</span> <span class="arrow">→</span> <span class="desc">版本 vs registry 一致性</span></div>
-    <div class="arch-item"><span class="name">encode_check</span> <span class="arrow">→</span> <span class="desc">base64/hex 混淆检测</span></div>
-    <div class="arch-item"><span class="name">diff_check</span> <span class="arrow">→</span> <span class="desc">版本对比：新增了什么权限/指令</span></div>
-    <div class="arch-item"><span class="name">signature_check</span> <span class="arrow">→</span> <span class="desc">manifest 数字签名验证</span></div>
-  </div>
-
-  <div id="engine" class="arch-box">
-    <h4>3. Engine — 策略引擎 + 评分</h4>
-    <div class="arch-item"><span class="name">policy_rego</span> <span class="arrow">→</span> <span class="desc">Rego rules (OPA 兼容策略语言)</span></div>
-    <div class="arch-item"><span class="name">scorer</span> <span class="arrow">→</span> <span class="desc">加权风险评分：critical=40, warning=15, info=2</span></div>
-    <div class="arch-item"><span class="name">blocker</span> <span class="arrow">→</span> <span class="desc">阻断逻辑 + 可解释原因</span></div>
-  </div>
-
-  <div id="output" class="arch-box">
-    <h4>4. Output — 多种输出格式</h4>
-    <div class="arch-item"><span class="name">terminal</span> <span class="arrow">→</span> <span class="desc">彩色 CLI 输出</span></div>
-    <div class="arch-item"><span class="name">sarif</span> <span class="arrow">→</span> <span class="desc">GitHub Code Scanning 集成</span></div>
-    <div class="arch-item"><span class="name">junit</span> <span class="arrow">→</span> <span class="desc">CI pipeline 集成</span></div>
-    <div class="arch-item"><span class="name">json</span> <span class="arrow">→</span> <span class="desc">机器可读</span></div>
-    <div class="arch-item"><span class="name">markdown</span> <span class="arrow">→</span> <span class="desc">PR comment 模板</span></div>
-  </div>
-
-  <div id="phase2-arch" class="arch-box">
-    <h4>5. Phase 2 — Policy Engine + Trace</h4>
-    <div class="arch-item"><span class="name">policy_rego</span> <span class="arrow">→</span> <span class="desc">OPA-compatible Rego policy evaluation engine</span></div>
-    <div class="arch-item"><span class="name">trace_recorder</span> <span class="arrow">→</span> <span class="desc">Record agent tool call traces as baseline</span></div>
-    <div class="arch-item"><span class="name">trace_comparator</span> <span class="arrow">→</span> <span class="desc">Detect new tools, param changes, method upgrades</span></div>
-    <div class="arch-item"><span class="name">notifications</span> <span class="arrow">→</span> <span class="desc">Slack/Teams webhook integration</span></div>
-  </div>
-
-  <div id="phase3-arch" class="arch-box">
-    <h4>6. Phase 3 — Registry Scanner</h4>
-    <div class="arch-item"><span class="name">github_discover</span> <span class="arrow">→</span> <span class="desc">Search GitHub for SKILL.md files</span></div>
-    <div class="arch-item"><span class="name">remote_fetch</span> <span class="arrow">→</span> <span class="desc">Fetch and scan skills from raw URLs</span></div>
-    <div class="arch-item"><span class="name">trust_score</span> <span class="arrow">→</span> <span class="desc">Score 0-100 based on security + community signals</span></div>
-    <div class="arch-item"><span class="name">malicious_db</span> <span class="arrow">→</span> <span class="desc">Community-reported malicious skill database</span></div>
-  </div>
-
-  <div id="phase4-arch" class="arch-box">
-    <h4>7. Phase 4 — Agent Surface + Enterprise</h4>
-    <div class="arch-item"><span class="name">agent_surface</span> <span class="arrow">→</span> <span class="desc">7-dimension scan: skill/tool/prompt/model/RAG/memory/permission</span></div>
-    <div class="arch-item"><span class="name">compliance</span> <span class="arrow">→</span> <span class="desc">SOC2/GDPR/PCI-DSS/ISO27001 audit reports</span></div>
-    <div class="arch-item"><span class="name">rbac</span> <span class="arrow">→</span> <span class="desc">Enterprise role-based access control</span></div>
-    <div class="arch-item"><span class="name">helm</span> <span class="arrow">→</span> <span class="desc">Docker + Kubernetes Helm chart deployment</span></div>
-  </div>
-
-  <h3>核心原语：Skill Surface Diff</h3>
-
-  <p>这个产品的核心不是扫描本身，而是 <strong>Skill Surface Diff</strong>——Agent 能力边界的变化对比。</p>
-
-  <div class="callout blue">
-    <strong>Skill Surface =</strong> manifest fields + declared permissions + tool schemas + scripts + network endpoints + file access + instruction files + hidden prompt modifiers + version delta<br><br>
-    <strong>Scanner 的任务：</strong><br>
+  <div class="callout purple">
+    <strong>核心原语：Skill Surface Diff</strong><br>
     <code>current_surface = scan(skill@v1.8.2)</code><br>
-    <code>baseline_surface = scan(skill@v1.8.1)</code><br><br>
-    <code>diff = current_surface - baseline_surface</code><br><br>
-    if diff adds: prompt_override / data_exfiltration_path / new_network_egress / new_high-risk_tool / new_sensitive_file_access → <strong>then block merge</strong>
+    <code>baseline_surface = scan(skill@v1.8.1)</code><br>
+    if diff adds: prompt_override / data_exfiltration_path / new_network_egress / new_high-risk_tool → <strong>block merge</strong>
   </div>
 
-  <p>这个 framing 比
+  <h3>代码结构</h3>
+  <pre>skill_scanner/
+├── <span class="k">cli.py</span>              # Click CLI (8 commands, 5 formats)
+├── <span class="k">engine.py</span>           # Scan orchestrator + policy verdict
+├── <span class="k">parser.py</span>           # SKILL.md front matter + YAML parser
+├── <span class="k">trace_engine.py</span>     # Trace record + compare
+├── <span class="k">policy_engine.py</span>    # OPA Rego + built-in YAML policy
+├── <span class="k">registry.py</span>         # Remote registry scanner (SSRF-protected)
+├── <span class="k">agent_surface.py</span>    # 7-dimension surface audit
+├── <span class="k">enterprise.py</span>       # Compliance, RBAC, Notifications
+└── <span class="k">scanners/</span>
+    ├── <span class="k">manifest.py</span>       # Manifest scan (PI001, MF000-5)
+    ├── <span class="k">instruction.py</span>    # Instruction scan (PO001, SC001)
+    ├── <span class="k">permission.py</span>     # Permission scan (NET001, TOOL001)
+    ├── <span class="k">script.py</span>         # Script scan (DX001, SC001-2, WS001-6)
+    └── <span class="k">dependency.py</span>     # Dependency scan (RS001-3, CV000)</pre>
+
+  <div class="two-col">
+    <div class="arch-box">
+      <h4>Phase 2: Policy + Trace</h4>
+      <div class="arch-item"><span class="name">policy_rego</span> <span class="arrow">→</span> OPA-compatible Rego evaluation</div>
+      <div class="arch-item"><span class="name">trace_recorder</span> <span class="arrow">→</span> Record baseline traces</div>
+      <div class="arch-item"><span class="name">trace_comparator</span> <span class="arrow">→</span> Detect drift: new/removed tools</div>
+      <div class="arch-item"><span class="name">notifications</span> <span class="arrow">→</span> Slack/Teams webhooks</div>
+    </div>
+    <div class="arch-box">
+      <h4>Phase 3: Registry</h4>
+      <div class="arch-item"><span class="name">github_discover</span> <span class="arrow">→</span> Search GitHub for SKILL.md</div>
+      <div class="arch-item"><span class="name">remote_fetch</span> <span class="arrow">→</span> Fetch + scan from URL</div>
+      <div class="arch-item"><span class="name">trust_score</span> <span class="arrow">→</span> Score 0-100 (security + community)</div>
+      <div class="arch-item"><span class="name">ssrf_protection</span> <span class="arrow">→</span> Per-hop redirect validation</div>
+    </div>
+    <div class="arch-box">
+      <h4>Phase 4: Enterprise</h4>
+      <div class="arch-item"><span class="name">agent_surface</span> <span class="arrow">→</span> 7-dim all-in-one scan</div>
+      <div class="arch-item"><span class="name">compliance</span> <span class="arrow">→</span> SOC2/GDPR/PCI reports + score</div>
+      <div class="arch-item"><span class="name">rbac</span> <span class="arrow">→</span> Role-based access (4 roles)</div>
+      <div class="arch-item"><span class="name">helm</span> <span class="arrow">→</span> Docker + Kubernetes deployment</div>
+    </div>
+  </div>
 </section>
 
-<!-- ====== 三、操作指导 ====== -->
-<section id="usage">
-  <h2><span class="num">03</span>操作指导</h2>
+<!-- ====== CLI ====== -->
+<section id="cli">
+  <h2><span class="num">05</span>CLI 命令参考</h2>
 
-  <div id="cli" class="arch-box">
-    <h4>CLI 命令（概念设计）</h4>
-      <span class="c"># Phase 1: 基础扫描</span>
-<span class="k">$</span> <span class="cmd">agent-skills scan</span> <span class="val">./skills/my-skill/</span>
-<span class="k">$</span> <span class="cmd">agent-skills scan</span> <span class="val">./skills/my-skill/</span> <span class="flag">--policy</span> <span class="val">strict</span> <span class="flag">--format</span> <span class="val">sarif</span>
-
-      <span class="c"># Phase 2: 轨迹回放 + 漂移检测</span>
-<span class="k">$</span> <span class="cmd">agent-skills trace record</span> <span class="val">my-skill 1.0.0</span> <span class="flag">--input</span> <span class="val">trace.json</span>
-<span class="k">$</span> <span class="cmd">agent-skills trace diff</span> <span class="val">current-trace.json</span> <span class="flag">--baseline-trace</span> <span class="val">my-skill-1.0.0</span>
-
-      <span class="c"># Phase 3: Registry 搜索 + 远程扫描</span>
-<span class="k">$</span> <span class="cmd">agent-skills registry discover</span> <span class="flag">--query</span> <span class="val">"financial"</span>
-<span class="k">$</span> <span class="cmd">agent-skills registry scan-url</span> <span class="val">https://raw.githubusercontent.com/...</span>
-
-      <span class="c"># Phase 4: 全量审计 + 合规报告</span>
-<span class="k">$</span> <span class="cmd">agent-skills audit</span> <span class="val">./my-agent/</span>
-<span class="k">$</span> <span class="cmd">agent-skills compliance</span> <span class="val">./my-agent/</span> <span class="flag">--framework</span> <span class="val">soc2</span>
-
-      <span class="c"># 通知集成</span>
-<span class="k">$</span> <span class="cmd">agent-skills notify</span> <span class="val">./skills/</span> <span class="flag">--slack</span> <span class="val">https://hooks.slack.com/...</span>
-
-      <span class="c"># 策略管理</span>
-<span class="k">$</span> <span class="cmd">agent-skills init</span> <span class="flag">--template</span> <span class="val">moderate</span>
-<span class="k">$</span> <span class="cmd">agent-skills policies</span></pre>
+  <div class="table-wrap">
+  <table>
+    <tr><th>命令</th><th>用途</th><th>关键参数</th></tr>
+    <tr><td><code>agent-skills scan</code></td><td>扫描 Skill 安全风险</td><td>--policy, --format (5种), --diff, --baseline</td></tr>
+    <tr><td><code>agent-skills init</code></td><td>初始化安全 policy</td><td>--template (moderate/strict/permissive)</td></tr>
+    <tr><td><code>agent-skills audit</code></td><td>全 Agent 表面审计</td><td>--policy, --format (terminal/json)</td></tr>
+    <tr><td><code>agent-skills compliance</code></td><td>合规报告生成</td><td>--framework (5种), --format (terminal/json)</td></tr>
+    <tr><td><code>agent-skills policies</code></td><td>列出可用 policy</td><td>—</td></tr>
+    <tr><td><code>agent-skills registry</code></td><td>Registry 扫描</td><td>discover, scan-url, check</td></tr>
+    <tr><td><code>agent-skills trace</code></td><td>Trace 录制/比较</td><td>record, diff</td></tr>
+    <tr><td><code>agent-skills notify</code></td><td>发送通知</td><td>--slack, --teams</td></tr>
+  </table>
   </div>
+</section>
 
-  <div id="github-action" class="arch-box">
-    <h4>GitHub Action（概念设计）</h4>
-    <pre><span class="c"># .github/workflows/agent-skill-scan.yml</span>
+<!-- ====== GitHub Action ====== -->
+<section id="github-action">
+  <h2><span class="num">06</span>GitHub Action</h2>
+
+  <pre><span class="c"># .github/workflows/agent-skill-scan.yml</span>
 <span class="k">name:</span> Agent Skill Scan
 <span class="k">on:</span>
   <span class="k">pull_request:</span>
-    <span class="k">paths:</span>
-      - <span class="s">'skills/**'</span>
-      - <span class="s">'**/SKILL.md'</span>
-
+    <span class="k">paths:</span> [<span class="s">'skills/**'</span>, <span class="s">'**/SKILL.md'</span>]
 <span class="k">jobs:</span>
   <span class="k">scan:</span>
     <span class="k">runs-on:</span> ubuntu-latest
     <span class="k">steps:</span>
-      - <span class="k">uses:</span> actions/checkout@v4
-      - <span class="k">uses:</span> agent-skills/scan-action@v1
+      - <span class="k">uses:</span> <span class="s">actions/checkout@v4</span>
+      - <span class="k">uses:</span> <span class="s">jasoneip01-pixel/skill-scanner@main</span>
         <span class="k">with:</span>
           <span class="k">path:</span> <span class="s">'./skills/'</span>
-          <span class="k">policy:</span> <span class="s">'security.moderate'</span>
-          <span class="k">fail-on:</span> <span class="s">'critical'</span>
-      - <span class="k">uses:</span> agent-skills/pr-comment@v1
-        <span class="k">if:</span> failure()
-        <span class="k">with:</span>
-          <span class="k">report:</span> <span class="s">'scan-results.sarif'</span></pre>
-  </div>
+          <span class="k">policy:</span> <span class="s">'moderate'</span>
+          <span class="k">format:</span> <span class="s">'sarif'</span></pre>
 
-  <div id="policy" class="arch-box">
-    <h4>CI 阻断策略</h4>
-    <pre><span class="c"># .agent-skills/policy.yaml</span>
-<span class="k">policy:</span>
-  <span class="k">level:</span> moderate
-  <span class="k">rules:</span>
-    - <span class="k">id:</span> prompt_injection
-      <span class="k">severity:</span> critical
-      <span class="k">action:</span> block
-    - <span class="k">id:</span> data_exfiltration
-      <span class="k">severity:</span> critical
-      <span class="k">action:</span> block
-    - <span class="k">id:</span> permission_overreach
-      <span class="k">severity:</span> warning
-      <span class="k">action:</span> comment
-    - <span class="k">id:</span> unknown_network_access
-      <span class="k">severity:</span> warning
-      <span class="k">action:</span> comment
-  <span class="k">thresholds:</span>
-    <span class="k">max_critical:</span> 0
-    <span class="k">max_warnings:</span> 3
-    <span class="k">risk_score_max:</span> 50</pre>
-  </div>
-
-  <div id="demo-walkthrough" class="arch-box">
-    <h4>演示流程（共 6 步）</h4>
-    <ol>
-      <li><strong>打开</strong> <code>demo/agent-skills-scanner-demo.html</code> — 看到左栏目录树，红色原点表示有发现，绿色表示安全</li>
-      <li><strong>点击 Run Scan</strong> — 扫描动画，结果逐条显现</li>
-      <li><strong>阅读 Findings 面板</strong> — 按严重程度分组：Critical → Warning → Passed</li>
-      <li><strong>展开每条 finding</strong> — 查看代码示例和高亮的问题行</li>
-      <li><strong>切换到 Version Diff 面板</strong> — 红色为新增恶意内容，清晰展示版本变更</li>
-      <li><strong>切换到 Full Report</strong> — 完整文本报告，可导出 SARIF/JSON</li>
-    </ol>
-  </div>
+  <p>Action 自动调度：</p>
+  <ol>
+    <li><code>pip install skill-scanner</code></li>
+    <li><code>agent-skills scan --format sarif -o results.sarif</code></li>
+    <li>上传 SARIF 到 GitHub Code Scanning</li>
+    <li>按 fail-on 阈值判定 CI pass/fail</li>
+  </ol>
 </section>
 
-<!-- ====== 四、竞争定位 ====== -->
+<!-- ====== 竞争定位 ====== -->
 <section id="competitive">
-  <h2><span class="num">04</span>竞争定位</h2>
+  <h2><span class="num">07</span>竞争定位</h2>
 
   <p><strong>不做 eval 的竞争，做「发布前安全门」。</strong></p>
 
   <div class="table-wrap">
   <table>
-    <tr><th>能力</th><th>Promptfoo</th><th>LangSmith</th><th>Langfuse</th><th><strong>Skill Scanner</strong></th></tr>
-    <tr><td>LLM eval</td><td><span class="tag y">✅</span></td><td><span class="tag y">✅</span></td><td><span class="tag y">✅</span></td><td><span class="tag n">—</span></td></tr>
-    <tr><td>Trace / Observability</td><td><span class="tag n">—</span></td><td><span class="tag y">✅</span></td><td><span class="tag y">✅</span></td><td><span class="tag n">—</span></td></tr>
-    <tr><td>CI/CD 集成</td><td><span class="tag y">✅</span></td><td><span class="tag y">✅</span></td><td><span class="tag n">—</span></td><td><span class="tag y">✅</span></td></tr>
-    <tr><td><strong>Skill 供应链扫描</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅ 唯一</span></td></tr>
-    <tr><td><strong>工具权限审计</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅</span></td></tr>
-    <tr><td><strong>指令注入检测</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅</span></td></tr>
-    <tr><td><strong>版本安全差异</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅</span></td></tr>
-    <tr><td><strong>Registry 扫描</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">未来</span></td></tr>
+    <tr><th>能力</th><th>Promptfoo</th><th>LangSmith</th><th>Langfuse</th><th>Snyk mcp-scan</th><th><strong>Skill Scanner</strong></th></tr>
+    <tr><td>LLM eval</td><td><span class="tag y">✅</span></td><td><span class="tag y">✅</span></td><td><span class="tag y">✅</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td></tr>
+    <tr><td>CI/CD 集成</td><td><span class="tag y">✅</span></td><td><span class="tag y">✅</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag y">✅</span></td></tr>
+    <tr><td>Skill 扫描</td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag y">✅</span></td><td><span class="tag u">✅</span></td></tr>
+    <tr><td><strong>版本能力差异</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅ 唯一</span></td></tr>
+    <tr><td><strong>Policy-as-code</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅ 唯一</span></td></tr>
+    <tr><td><strong>全表面审计</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅ 唯一</span></td></tr>
+    <tr><td><strong>合规报告</strong></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag n">—</span></td><td><span class="tag u">✅ 唯一</span></td></tr>
   </table>
   </div>
 
-  <h3>一句话差异</h3>
-  <blockquote><strong>Promptfoo</strong> — "你的 LLM output 安全吗"<br><strong>LangSmith</strong> — "你的 Agent trace 怎么看"<br><strong>Skill Scanner</strong> — <strong>"你装的这个 Skill 会不会把你卖了"</strong></blockquote>
-
-  <h3>为什么是现在</h3>
-  <p>OpenAI 正在推 Skills（带 SKILL.md manifest 的 versioned bundle），Anthropic 也在推 Agent Skills。Skill Registry（类似 npm）的雏形即将出现。有 registry 就有恶意包。有恶意包就需要安全扫描。现在没有任何人在做 Skill 级别的供应链安全扫描。</p>
-
-  <div class="callout red">
-    <strong>OpenAI 文档原话：</strong>"Skills can introduce prompt-injection-driven data exfiltration and other security risks. Use Skills with care and review their contents before use."<br><br>
-    <strong>翻译：</strong>"用 Skill 要小心，先检查内容。"<br><br>
-    <strong>问题：</strong>没有任何工具帮你检查。这就是 Skill Scanner 存在的理由。
+  <div class="callout blue">
+    <strong>Snyk 已于 2026 年发布 ToxicSkills 研究 + mcp-scan。</strong><br><br>
+    这意味着"能扫恶意 skill"已不是充分差异点。真正的差异化是：<br><br>
+    <strong>Snyk scans whether a skill is toxic.</strong><br>
+    <strong>Skill Scanner proves whether a skill version expanded the agent's authority beyond policy.</strong>
   </div>
 
-  <div class="callout blue">
-    <strong>⚠ 竞争更新：</strong>Snyk 已于 2026 年发布 <a href="https://snyk.io/blog/toxicskills-malicious-ai-agent-skills-clawhub/" style="color:var(--accent)">ToxicSkills</a> 研究，其 mcp-scan 支持 Agent Skills 安全检测（恶意 SKILL.md pattern、prompt injection、credential exposure 等）。<br><br>
-    <strong>这意味着：</strong>"没人做"已不是充分差异点。真正的差异化不是 "我能扫恶意 skill"，而是 <strong>Skill Surface Diff + version-to-version capability expansion + policy-as-code release gate + tool permission contract</strong>。<br><br>
-    <strong>一句话：</strong>Snyk scans whether a skill is toxic.<br>
-    <strong>You prove whether this skill version expanded the agent's authority beyond policy.</strong>
+  <h3>差异化核心</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>🔄 Version Diff</h4>
+      <p>v1.8.1 → v1.8.2 新增了哪个工具？谁在偷偷加 data_exfiltration？版本级 diff 是 Snyk 不做的事。</p>
+    </div>
+    <div class="card">
+      <h4>📋 Policy-as-Code</h4>
+      <p>OPA/Rego 策略引擎 + YAML 配置文件。你的安全策略跟你一起进 code review。</p>
+    </div>
+    <div class="card">
+      <h4>🔬 7 维表面审计</h4>
+      <p>不只是 skill，是 agent 的完整能力边界：tool/prompt/model/RAG/memory/permission。</p>
+    </div>
+    <div class="card">
+      <h4>📊 合规报告</h4>
+      <p>SOC2/GDPR/PCI-DSS 开箱即用。审计员不关心安全分数，只关心 control 覆盖。</p>
+    </div>
   </div>
 </section>
 
 </div>
 
 <script>
-// Highlight active sidebar link on scroll
-const sections=document.querySelectorAll('section[id], section h3');
+const sections=document.querySelectorAll('section[id]');
 const links=document.querySelectorAll('.sidebar a');
-
 window.addEventListener('scroll',()=>{
   let current='';
   sections.forEach(s=>{
     const top=s.getBoundingClientRect().top;
-    if(top<200) current=s.closest('section')?.id||s.id;
+    if(top<200) current=s.id;
   });
   links.forEach(l=>{
     l.classList.toggle('active',l.getAttribute('href')==='#'+current);
