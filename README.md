@@ -170,13 +170,13 @@ skill_scanner/
 
 MIT License — 详见 [LICENSE](LICENSE)。
 
-Enterprise 功能 (RBAC/Compliance) 在 MIT 之上附加约束（非商业使用免费，商业部署需授权）。
+Enterprise features (RBAC/Compliance) available under commercial license。
 
 ## 文档
 
 - [Product Definition](https://jasoneip01-pixel.github.io/skill-scanner/demos/skill-scanner-product-definition.html)
 - [Interactive Demo](https://jasoneip01-pixel.github.io/skill-scanner/demos/agent-skills-scanner-demo.html)
-- [Business Strategy](https://github.com/jasoneip01-pixel/skill-scanner/blob/main/docs/business-strategy.md)
+- [Product Positioning](https://github.com/jasoneip01-pixel/skill-scanner/blob/main/docs/business-positioning.md)
 
 ## 路线图
 
